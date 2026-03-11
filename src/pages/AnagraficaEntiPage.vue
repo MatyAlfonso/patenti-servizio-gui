@@ -8,34 +8,26 @@
     <Modal v-if="showModal" title="Nuovo Ente" @close="showModal = false">
       <form @submit.prevent="submitNewEntity" class="grid-form">
         <div class="form-group">
+          <label>Codice ente</label>
+          <input
+            v-model="entityForm.id"
+            type="text"
+            placeholder="Es: PCR, CFR"
+            required
+            style="text-transform: uppercase"
+          />
+        </div>
+
+        <div class="form-group">
           <label>Descrizione</label>
           <input
             v-model="entityForm.descrizione"
             type="text"
-            placeholder="Es: Corpo Forestale"
+            placeholder="Es: Protezione Civile Regionale"
             required
           />
         </div>
-        <!-- <div class="form-group">
-          <label>SQ Richieste</label>
-          <input
-            v-model="entityForm.sq_richieste"
-            type="text"
-            placeholder="Codice sequenza"
-          />
-        </div>
-        <div class="form-group">
-          <label>SQ Patenti</label>
-          <input
-            v-model="entityForm.sq_patenti"
-            type="text"
-            placeholder="Codice sequenza"
-          />
-        </div> -->
-        <div class="form-group">
-          <label>Codice utente responsabile</label>
-          <input v-model="entityForm.codice_utente_responsabile" type="text" required />
-        </div>
+
         <div class="form-actions">
           <button type="button" @click="showModal = false" class="btn-cancel">
             Annulla
@@ -64,19 +56,15 @@ const showModal = ref(false);
 const error = ref(null);
 
 const initialEntityState = {
+  id: "",
   descrizione: "",
-  //sq_richieste: "",
-  //sq_patenti: "",
-  codice_utente_responsabile: "",
 };
 
 const entityForm = ref({ ...initialEntityState });
 
 const tableColumns = [
+  { key: "id", label: "Codice" },
   { key: "descrizione", label: "Descrizione" },
-  //{ key: "sq_richieste", label: "SQ Richieste" },
-  //{ key: "sq_patenti", label: "SQ Patenti" },
-  { key: "codice_utente_responsabile", label: "Codice utente responsabile" },
 ];
 
 const loadEntities = async () => {
