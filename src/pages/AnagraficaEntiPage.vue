@@ -2,10 +2,10 @@
   <div class="page-container">
     <div class="header-section">
       <h2>Anagrafica degli enti</h2>
-      <button class="btn-new" @click="showModal = true">+ Nuovo Ente</button>
+      <button class="btn-new" @click="showModal = true">+ Nuovo ente</button>
     </div>
 
-    <Modal v-if="showModal" title="Nuovo Ente" @close="showModal = false">
+    <Modal v-if="showModal" title="Nuovo ente" @close="showModal = false">
       <form @submit.prevent="submitNewEntity" class="grid-form">
         <div class="form-group">
           <label>Codice ente</label>

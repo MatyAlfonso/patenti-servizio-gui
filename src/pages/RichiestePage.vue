@@ -7,14 +7,14 @@
 
     <Modal
       v-if="showModal"
-      title="Richiesta Patente di Servizio"
+      title="Richiesta patente di servizio"
       @close="showModal = false"
     >
       <form @submit.prevent="submitRequest" class="grid-form">
         <fieldset>
-          <legend>Dati Personali</legend>
+          <legend>Dati personali</legend>
           <div class="form-group">
-            <label>Cognome e Nome</label>
+            <label>Cognome e nome</label>
             <select v-model="form.id_persona" @change="checkNewPerson" required>
               <option disabled value="">Seleziona...</option>
               <option v-for="p in people" :key="p.id" :value="p.id">

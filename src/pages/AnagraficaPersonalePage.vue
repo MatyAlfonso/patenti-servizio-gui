@@ -2,10 +2,10 @@
   <div class="page-container">
     <div class="header-section">
       <h2>Anagrafica del personale</h2>
-      <button class="btn-new" @click="showModal = true">+ Nuova Persona</button>
+      <button class="btn-new" @click="showModal = true">+ Nuova persona</button>
     </div>
 
-    <Modal v-if="showModal" title="Nuova Persona" @close="showModal = false">
+    <Modal v-if="showModal" title="Nuova persona" @close="showModal = false">
       <form @submit.prevent="submitNewPerson" class="grid-form">
         <div class="form-group">
           <label>Cognome</label>
