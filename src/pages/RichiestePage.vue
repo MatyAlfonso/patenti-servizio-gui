@@ -12,6 +12,29 @@
     >
       <form @submit.prevent="submitRequest" class="grid-form">
         <fieldset>
+          <legend>Tipologia</legend>
+          <div class="file-grid">
+            <div class="form-group">
+              <label>Ente</label>
+              <select v-model="form.id_ente" required>
+                <option disabled value="">Seleziona l'ente...</option>
+                <option v-for="e in entities" :key="e.id" :value="e.id">
+                  {{ e.id }} - {{ e.descrizione }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo richiesta</label>
+              <select v-model="form.id_tipo" required>
+                <option v-for="t in requestTypes" :key="t.id" :value="t.id">
+                  {{ t.descrizione }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
           <legend>Dati personali</legend>
           <div class="form-group">
             <label>Cognome e nome</label>
@@ -80,13 +103,13 @@
               <input v-model="form.patente_civile_numero" type="text" required />
             </div>
             <div class="form-group">
-              <label>Categorie</label>
-              <input
-                v-model="form.patente_civile_categorie"
-                type="text"
-                placeholder="Es. B, C"
-                required
-              />
+              <label>Categoria patente civile</label>
+              <select v-model="form.patente_civile_categorie" required>
+                <option disabled value="">Seleziona categoria...</option>
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                  {{ cat.id }} - {{ cat.descrizione }}
+                </option>
+              </select>
             </div>
           </div>
           <div class="file-grid">
@@ -156,6 +179,8 @@ const error = ref(null);
 const richieste = ref([]);
 const people = ref([]);
 const entities = ref([]);
+const categories = ref([]);
+const requestTypes = ref([]);
 
 const initialFormState = {
   id_persona: "",
@@ -168,7 +193,7 @@ const initialFormState = {
   patente_civile_scadenza: "",
   note_richiedente: "",
   id_tipo: "NUOVA",
-  id_stato: "IN_PREP",
+  id_stato: "IN_PREPARAZIONE",
 };
 
 const personForm = ref({
@@ -207,14 +232,24 @@ const formattedRichieste = computed(() => {
 const loadData = async () => {
   try {
     loading.value = true;
-    const [resRichieste, resPeople, resEntities] = await Promise.all([
+    const [
+      resRichieste,
+      resPeople,
+      resEntities,
+      resCategories,
+      resTypes,
+    ] = await Promise.all([
       apiClient.get("/richieste"),
       apiClient.get("/persone"),
       apiClient.get("/enti"),
+      apiClient.get("/categorie-patenti"),
+      apiClient.get("/tipi-richieste"),
     ]);
     richieste.value = resRichieste;
     people.value = resPeople;
     entities.value = resEntities;
+    categories.value = resCategories;
+    requestTypes.value = resTypes;
   } catch (err) {
     error.value = "Errore nel caricamento dati.";
   } finally {
