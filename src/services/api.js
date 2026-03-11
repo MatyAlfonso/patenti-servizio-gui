@@ -8,11 +8,18 @@ export const apiClient = {
     },
 
     async post(endpoint, data) {
-        const response = await fetch(`${BASE_URL}${endpoint}`, {
+        const isFormData = data instanceof FormData;
+
+        const options = {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
+            body: isFormData ? data : JSON.stringify(data)
+        };
+
+        if (!isFormData) {
+            options.headers = { 'Content-Type': 'application/json' };
+        }
+
+        const response = await fetch(`${BASE_URL}${endpoint}`, options);
         if (!response.ok) throw new Error('Error in POST request');
         return response.json();
     }
