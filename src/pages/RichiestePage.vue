@@ -160,6 +160,12 @@
     <div v-if="loading">Caricando...</div>
     <div v-else-if="error">{{ error }}</div>
     <DataTable v-else :items="formattedRichieste" :columns="columns" />
+    <Toast
+      :show="toast.show"
+      :message="toast.message"
+      :type="toast.type"
+      @close="toast.show = false"
+    />
   </div>
 </template>
 
@@ -168,6 +174,7 @@ import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
 import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
+import Toast from "@/components/Toast.vue";
 
 const showModal = ref(false);
 const showPersonModal = ref(false);
@@ -182,6 +189,14 @@ const entities = ref([]);
 const categories = ref([]);
 const requestTypes = ref([]);
 
+const personForm = ref({
+  cognome: "",
+  nome: "",
+  codice_fiscale: "",
+  data_nascita: "",
+  luogo_nascita: "",
+});
+
 const initialFormState = {
   id_persona: "",
   id_ente: "",
@@ -195,16 +210,13 @@ const initialFormState = {
   id_tipo: "NUOVA",
   id_stato: "IN_PREPARAZIONE",
 };
-
-const personForm = ref({
-  cognome: "",
-  nome: "",
-  codice_fiscale: "",
-  data_nascita: "",
-  luogo_nascita: "",
-});
-
 const form = ref({ ...initialFormState });
+
+const toast = ref({
+  show: false,
+  message: "",
+  type: "success",
+});
 
 const files = { foto: null, firma: null };
 
@@ -257,6 +269,13 @@ const loadData = async () => {
   }
 };
 
+const showToast = (msg, type = "success") => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 4000);
+};
+
 const handleFile = (e, type) => {
   files[type] = e.target.files[0];
 };
@@ -265,9 +284,7 @@ const submitRequest = async () => {
   try {
     isSaving.value = true;
     const formData = new FormData();
-
     Object.keys(form.value).forEach((key) => formData.append(key, form.value[key]));
-
     if (files.foto) formData.append("fototessera", files.foto);
     if (files.firma) formData.append("firma", files.firma);
 
@@ -276,9 +293,9 @@ const submitRequest = async () => {
     showModal.value = false;
     resetForm();
     await loadData();
-    alert("Richiesta salvata con successo!");
+    showToast("Richiesta salvata con successo!");
   } catch (err) {
-    alert("Errore durante il salvataggio: " + err.message);
+    showToast("Errore: " + err.message, "error");
   } finally {
     isSaving.value = false;
   }
@@ -303,8 +320,10 @@ const submitNewPerson = async () => {
 
     showPersonModal.value = false;
     Object.keys(personForm.value).forEach((key) => (personForm.value[key] = ""));
+
+    showToast("Persona creata correttamente");
   } catch (err) {
-    alert("Errore nella creazione della persona");
+    showToast("Errore nella creazione della persona", "error");
   } finally {
     isSavingPerson.value = false;
   }
