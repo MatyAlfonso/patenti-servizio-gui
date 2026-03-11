@@ -2,20 +2,30 @@
   <Transition name="toast">
     <div v-if="show" :class="['toast-container', type]">
       <div class="toast-content">
-        <span class="icon">{{ type === "success" ? "✅" : "❌" }}</span>
+        <Icon
+          :name="type === 'success' ? 'check_circle' : 'error'"
+          size="24"
+          class="toast-icon"
+        />
         <p>{{ message }}</p>
       </div>
-      <button class="close-btn" @click="$emit('close')">&times;</button>
+
+      <button class="close-btn" @click="$emit('close')">
+        <Icon name="close" size="20" />
+      </button>
     </div>
   </Transition>
 </template>
 
 <script setup>
+import Icon from "@/components/Icon.vue";
+
 defineProps({
   show: Boolean,
   message: String,
   type: { type: String, default: "success" },
 });
+
 defineEmits(["close"]);
 </script>
 

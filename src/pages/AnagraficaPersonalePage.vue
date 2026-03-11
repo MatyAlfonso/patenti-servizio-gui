@@ -2,7 +2,9 @@
   <div class="page-container">
     <div class="header-section">
       <h2>Anagrafica del personale</h2>
-      <button class="btn-new" @click="showModal = true">+ Nuova persona</button>
+      <button class="btn-new" @click="showModal = true">
+        <Icon name="add" size="18" /> Nuova persona
+      </button>
     </div>
 
     <Modal v-if="showModal" title="Nuova persona" @close="showModal = false">
@@ -47,6 +49,7 @@ import { ref, onMounted } from "vue";
 import { apiClient } from "@/services/api";
 import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
+import Icon from "@/components/Icon.vue";
 
 const people = ref([]);
 const loading = ref(true);

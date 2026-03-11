@@ -2,7 +2,9 @@
   <div class="page-container">
     <div class="header-section">
       <h2>Anagrafica degli enti</h2>
-      <button class="btn-new" @click="showModal = true">+ Nuovo ente</button>
+      <button class="btn-new" @click="showModal = true">
+        <Icon name="add" size="18" /> Nuova ente
+      </button>
     </div>
 
     <Modal v-if="showModal" title="Nuovo ente" @close="showModal = false">
@@ -48,6 +50,7 @@ import { ref, onMounted } from "vue";
 import { apiClient } from "@/services/api";
 import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
+import Icon from "@/components/Icon.vue";
 
 const entities = ref([]);
 const loading = ref(true);
