@@ -42,7 +42,7 @@ defineEmits(["close"]);
 .modal-wrapper {
   background: white;
   width: 100%;
-  max-width: 600px;
+  max-width: 650px;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   overflow: hidden;
