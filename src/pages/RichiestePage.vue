@@ -224,8 +224,8 @@ const formattedRichieste = computed(() => {
     cognome: r.Persona?.cognome,
     nome: r.Persona?.nome,
     ente: r.Ente?.descrizione,
-    tipo_richiesta: r.TipoRichiesta?.descrizione,
-    stato_richiesta: r.StatoRichiesta?.descrizione,
+    tipo_richiesta: r.Tipo?.descrizione,
+    stato_richiesta: r.Stato?.descrizione,
   }));
 });
 
