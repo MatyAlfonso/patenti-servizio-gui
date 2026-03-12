@@ -3,23 +3,24 @@
     <table class="generic-table">
       <thead>
         <tr>
-          <th v-for="col in columns" :key="col.key">
-            {{ col.label }}
-          </th>
+          <th v-for="col in columns" :key="col.key">{{ col.label }}</th>
+          <th v-if="$slots.actions">Azioni</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(item, index) in items" :key="item.id || index">
           <td v-for="col in columns" :key="col.key">
-            {{ item[col.key] }}
+            <slot :name="'cell-' + col.key" :item="item">
+              {{ item[col.key] }}
+            </slot>
+          </td>
+          <td v-if="$slots.actions">
+            <slot name="actions" :item="item"></slot>
           </td>
         </tr>
       </tbody>
     </table>
-
-    <div v-if="items.length === 0" class="no-data">
-      Nessun dato disponibile.
-    </div>
+    <div v-if="items.length === 0" class="no-data">Nessun dato disponibile.</div>
   </div>
 </template>
 
@@ -28,12 +29,12 @@ defineProps({
   items: {
     type: Array,
     required: true,
-    default: () => []
+    default: () => [],
   },
   columns: {
     type: Array,
-    required: true
-  }
+    required: true,
+  },
 });
 </script>
 
