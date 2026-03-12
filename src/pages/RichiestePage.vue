@@ -3,7 +3,18 @@
     <div class="header-section">
       <h2>Richieste</h2>
 
-      <SearchBar v-model="searchQuery" placeholder="Cerca per cognome, nome o CF..." />
+      <div class="toolbar">
+        <SearchBar v-model="searchQuery" placeholder="Cerca per cognome, nome o CF..." />
+
+        <div class="filter-group">
+          <select v-model="statusFilter" class="filter-select">
+            <option value="ALL">Tutti gli stati</option>
+            <option value="IN_PREPARAZIONE">In preparazione</option>
+            <option value="INVIATA">Inviata</option>
+            <option value="RESPINTA">Respinta</option>
+          </select>
+        </div>
+      </div>
 
       <button class="btn-new" @click="showModal = true">
         <Icon name="add" size="18" /> Nuova richiesta
@@ -322,6 +333,7 @@ const loading = ref(true);
 const isSaving = ref(false);
 const error = ref(null);
 const searchQuery = ref("");
+const statusFilter = ref("ALL");
 
 const richieste = ref([]);
 const people = ref([]);
@@ -373,27 +385,34 @@ const columns = [
 const filteredAndFormattedRichieste = computed(() => {
   const query = searchQuery.value.toLowerCase();
 
-  const allFormated = richieste.value.map((r) => ({
+  let result = richieste.value.map((r) => ({
     id: r.id,
+    data_raw: new Date(r.data_richiesta),
     data: new Date(r.data_richiesta).toLocaleDateString(),
-    cognome: r.persona?.cognome,
-    nome: r.persona?.nome,
-    codice_fiscale: r.persona?.codice_fiscale,
-    ente: r.ente?.descrizione,
-    tipo_richiesta: r.tipo?.descrizione,
-    stato_richiesta: r.stato?.descrizione,
+    cognome: r.persona?.cognome || "",
+    nome: r.persona?.nome || "",
+    codice_fiscale: r.persona?.codice_fiscale || "",
+    ente: r.ente?.descrizione || "",
+    tipo_richiesta: r.tipo?.descrizione || "",
+    stato_richiesta: r.stato?.descrizione || "",
+    id_stato: r.id_stato,
     raw: r,
   }));
 
-  if (!query) return allFormated;
+  if (statusFilter.value !== "ALL") {
+    result = result.filter((r) => r.id_stato === statusFilter.value);
+  }
 
-  return allFormated.filter((r) => {
-    return (
-      r.cognome.toLowerCase().includes(query) ||
-      r.nome.toLowerCase().includes(query) ||
-      r.codice_fiscale.toLowerCase().includes(query)
+  if (query) {
+    result = result.filter(
+      (r) =>
+        r.cognome.toLowerCase().includes(query) ||
+        r.nome.toLowerCase().includes(query) ||
+        r.codice_fiscale.toLowerCase().includes(query)
     );
-  });
+  }
+
+  return result.sort((a, b) => a.data_raw - b.data_raw);
 });
 
 const loadData = async () => {
@@ -502,7 +521,6 @@ const printLicense = async (item) => {
 };
 
 const viewDetails = (item) => {
-  console.log(item);
   selectedRequest.value = item;
   showDetailModal.value = true;
 };
@@ -575,7 +593,13 @@ legend {
   gap: 10px;
   margin-top: 10px;
 }
-
+.btn-cancel {
+  background: #eee;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
 .btn-save {
   background: #0067b1;
   color: white;
@@ -700,5 +724,41 @@ legend {
 
 .images-container {
   display: flex;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 1rem;
+}
+
+.filter-group label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: white;
+  outline: none;
+}
+
+.filter-select:focus {
+  border-color: #0067b1;
+}
+
+:deep(.row-urgent) {
+  border-left: 4px solid #ff5900;
 }
 </style>
