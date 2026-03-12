@@ -161,7 +161,43 @@
 
     <div v-if="loading">Caricando...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable v-else :items="formattedRichieste" :columns="columns" />
+    <DataTable :items="formattedRichieste" :columns="columns">
+      <template #cell-foto="{ item }">
+        <div class="images-container">
+          <img
+            v-if="item.raw.fototessera"
+            :src="`api/${item.raw.fototessera.path}`"
+            class="thumbnail"
+          />
+          <img
+            v-if="item.raw.fototessera"
+            :src="`api/${item.raw.firma_scansionata.path}`"
+            class="thumbnail"
+          />
+          <Icon v-else name="account_circle" color="#ccc" />
+        </div>
+      </template>
+
+      <template #cell-stato_richiesta="{ item }">
+        <span :class="['badge', item.raw.id_stato]">
+          {{ item.raw.stato?.descrizione || item.stato_richiesta }}
+        </span>
+      </template>
+
+      <template #actions="{ item }">
+        <button class="btn-icon" @click="viewDetails(item.raw)" title="Dettagli">
+          <Icon name="visibility" size="18" />
+        </button>
+        <button
+          v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
+          class="btn-icon print"
+          @click="printLicense(item.raw)"
+          title="Stampa"
+        >
+          <Icon name="print" size="18" />
+        </button>
+      </template>
+    </DataTable>
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -230,17 +266,19 @@ const columns = [
   { key: "ente", label: "Ente" },
   { key: "tipo_richiesta", label: "Tipo" },
   { key: "stato_richiesta", label: "Stato" },
+  { key: "foto", label: "Allegati" },
 ];
 
 const formattedRichieste = computed(() => {
   return richieste.value.map((r) => ({
     id: r.id,
     data: new Date(r.data_richiesta).toLocaleDateString(),
-    cognome: r.Persona?.cognome,
-    nome: r.Persona?.nome,
-    ente: r.Ente?.descrizione,
-    tipo_richiesta: r.Tipo?.descrizione,
-    stato_richiesta: r.Stato?.descrizione,
+    cognome: r.persona?.cognome,
+    nome: r.persona?.nome,
+    ente: r.ente?.descrizione,
+    tipo_richiesta: r.tipo?.descrizione,
+    stato_richiesta: r.stato?.descrizione,
+    raw: r,
   }));
 });
 
