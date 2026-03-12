@@ -2,6 +2,9 @@
   <div class="page-container">
     <div class="header-section">
       <h2>Richieste</h2>
+
+      <SearchBar v-model="searchQuery" placeholder="Cerca per cognome, nome o CF..." />
+
       <button class="btn-new" @click="showModal = true">
         <Icon name="add" size="18" /> Nuova richiesta
       </button>
@@ -255,7 +258,7 @@
 
     <div v-if="loading">Caricando...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable :items="formattedRichieste" :columns="columns">
+    <DataTable :items="filteredAndFormattedRichieste" :columns="columns">
       <template #cell-foto="{ item }">
         <div class="images-container">
           <img
@@ -308,6 +311,7 @@ import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
 import Toast from "@/components/Toast.vue";
 import Icon from "@/components/Icon.vue";
+import SearchBar from "@/components/SearchBar.vue";
 
 const showModal = ref(false);
 const showPersonModal = ref(false);
@@ -317,6 +321,7 @@ const isSavingPerson = ref(false);
 const loading = ref(true);
 const isSaving = ref(false);
 const error = ref(null);
+const searchQuery = ref("");
 
 const richieste = ref([]);
 const people = ref([]);
@@ -365,17 +370,30 @@ const columns = [
   { key: "foto", label: "Allegati" },
 ];
 
-const formattedRichieste = computed(() => {
-  return richieste.value.map((r) => ({
+const filteredAndFormattedRichieste = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+
+  const allFormated = richieste.value.map((r) => ({
     id: r.id,
     data: new Date(r.data_richiesta).toLocaleDateString(),
     cognome: r.persona?.cognome,
     nome: r.persona?.nome,
+    codice_fiscale: r.persona?.codice_fiscale,
     ente: r.ente?.descrizione,
     tipo_richiesta: r.tipo?.descrizione,
     stato_richiesta: r.stato?.descrizione,
     raw: r,
   }));
+
+  if (!query) return allFormated;
+
+  return allFormated.filter((r) => {
+    return (
+      r.cognome.toLowerCase().includes(query) ||
+      r.nome.toLowerCase().includes(query) ||
+      r.codice_fiscale.toLowerCase().includes(query)
+    );
+  });
 });
 
 const loadData = async () => {
@@ -557,13 +575,7 @@ legend {
   gap: 10px;
   margin-top: 10px;
 }
-.btn-cancel {
-  background: #eee;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-}
+
 .btn-save {
   background: #0067b1;
   color: white;

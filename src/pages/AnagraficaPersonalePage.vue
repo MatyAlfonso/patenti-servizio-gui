@@ -2,6 +2,9 @@
   <div class="page-container">
     <div class="header-section">
       <h2>Anagrafica del personale</h2>
+
+      <SearchBar v-model="searchQuery" placeholder="Cerca per cognome, nome o CF..." />
+
       <button class="btn-new" @click="showModal = true">
         <Icon name="add" size="18" /> Nuova persona
       </button>
@@ -40,7 +43,7 @@
 
     <div v-if="loading">Caricando personale...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable v-else :items="people" :columns="tableColumns" />
+    <DataTable v-else :items="filteredPeople" :columns="tableColumns" />
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -51,18 +54,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
 import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
+import SearchBar from "@/components/SearchBar.vue";
 
 const people = ref([]);
 const loading = ref(true);
 const isSaving = ref(false);
 const showModal = ref(false);
 const error = ref(null);
+const searchQuery = ref("");
 
 const initialPersonState = {
   cognome: "",
@@ -86,6 +91,20 @@ const toast = ref({
   show: false,
   message: "",
   type: "success",
+});
+
+const filteredPeople = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+
+  if (!query) return people.value;
+
+  return people.value.filter((p) => {
+    return (
+      p.cognome.toLowerCase().includes(query) ||
+      p.nome.toLowerCase().includes(query) ||
+      p.codice_fiscale.toLowerCase().includes(query)
+    );
+  });
 });
 
 const loadPeople = async () => {

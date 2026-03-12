@@ -2,6 +2,9 @@
   <div class="page-container">
     <div class="header-section">
       <h2>Anagrafica degli enti</h2>
+
+      <SearchBar v-model="searchQuery" placeholder="Cerca per codice o nome..." />
+
       <button class="btn-new" @click="showModal = true">
         <Icon name="add" size="18" /> Nuova ente
       </button>
@@ -41,7 +44,7 @@
 
     <div v-if="loading">Caricando enti...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable v-else :items="entities" :columns="tableColumns" />
+    <DataTable v-else :items="filteredEntities" :columns="tableColumns" />
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -52,18 +55,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
 import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
+import SearchBar from "@/components/SearchBar.vue";
 
 const entities = ref([]);
 const loading = ref(true);
 const isSaving = ref(false);
 const showModal = ref(false);
 const error = ref(null);
+const searchQuery = ref("");
 
 const initialEntityState = {
   id: "",
@@ -81,6 +86,18 @@ const toast = ref({
   show: false,
   message: "",
   type: "success",
+});
+
+const filteredEntities = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+
+  if (!query) return entities.value;
+
+  return entities.value.filter((e) => {
+    return (
+      e.descrizione.toLowerCase().includes(query) || e.id.toLowerCase().includes(query)
+    );
+  });
 });
 
 const loadEntities = async () => {
