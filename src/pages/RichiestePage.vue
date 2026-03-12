@@ -159,6 +159,100 @@
       </form>
     </Modal>
 
+    <Modal
+      v-if="showDetailModal"
+      :title="'Dettaglio richiesta'"
+      @close="showDetailModal = false"
+    >
+      <div class="detail-container" v-if="selectedRequest">
+        <div class="detail-grid">
+          <div class="detail-images">
+            <div class="image-box">
+              <label>Fototessera</label>
+              <img :src="`api/${selectedRequest.fototessera?.path}`" class="full-img" />
+            </div>
+            <div class="image-box">
+              <label>Firma autografa</label>
+              <img
+                :src="`api/${selectedRequest.firma_scansionata?.path}`"
+                class="full-img signature"
+              />
+            </div>
+          </div>
+
+          <div class="detail-info">
+            <section>
+              <h3>Dati personali</h3>
+              <p>
+                <strong>Cognome e nome:</strong>
+                {{
+                  selectedRequest.persona?.cognome + " " + selectedRequest?.persona?.nome
+                }}
+              </p>
+              <p>
+                <strong>Codice fiscale:</strong>
+                {{ selectedRequest.persona?.codice_fiscale }}
+              </p>
+              <p>
+                <strong>Data di nascita:</strong>
+                {{ selectedRequest.persona?.data_nascita }}
+              </p>
+              <p>
+                <strong>Luogo di nascita:</strong>
+                {{ selectedRequest.persona?.luogo_nascita }}
+              </p>
+              <p><strong>Residenza:</strong> {{ selectedRequest.residenza_persona }}</p>
+            </section>
+
+            <section>
+              <h3>Patente civile</h3>
+              <p>
+                <strong>Numero:</strong>
+                {{ selectedRequest.persona?.patente_civile[0].numero }}
+              </p>
+              <p>
+                <strong>Categoria patente civile:</strong>
+                {{ selectedRequest.persona?.patente_civile[0].id_categoria }}
+              </p>
+              <p>
+                <strong>Data rilascio:</strong>
+                {{ selectedRequest.persona?.patente_civile[0].data_rilascio }}
+              </p>
+              <p>
+                <strong>Valida fino al:</strong>
+                {{ selectedRequest.persona?.patente_civile[0].data_scadenza }}
+              </p>
+            </section>
+
+            <section>
+              <h3>Richiesta</h3>
+              <p><strong>Ente:</strong> {{ selectedRequest.ente?.descrizione }}</p>
+              <p>
+                <strong>Stato:</strong>
+                <span :class="['badge', selectedRequest.id_stato]">
+                  {{ selectedRequest.stato?.descrizione }}
+                </span>
+              </p>
+            </section>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-cancel" @click="showDetailModal = false">Chiudi</button>
+          <button
+            v-if="selectedRequest.id_stato === 'IN_PREPARAZIONE'"
+            class="btn-save"
+            @click="
+              printLicense(selectedRequest);
+              showDetailModal = false;
+            "
+          >
+            <Icon name="print" size="18" /> Approva e stampa
+          </button>
+        </div>
+      </div>
+    </Modal>
+
     <div v-if="loading">Caricando...</div>
     <div v-else-if="error">{{ error }}</div>
     <DataTable :items="formattedRichieste" :columns="columns">
@@ -217,6 +311,8 @@ import Icon from "@/components/Icon.vue";
 
 const showModal = ref(false);
 const showPersonModal = ref(false);
+const showDetailModal = ref(false);
+const selectedRequest = ref(null);
 const isSavingPerson = ref(false);
 const loading = ref(true);
 const isSaving = ref(false);
@@ -376,6 +472,23 @@ const resetForm = () => {
   files.firma = null;
 };
 
+const printLicense = async (item) => {
+  try {
+    await apiClient.post(`/richieste/${item.id}/print`);
+
+    showToast("Patente generata e inviata con successo!");
+    await loadData();
+  } catch (err) {
+    showToast("Errore durante la stampa: " + err.message, "error");
+  }
+};
+
+const viewDetails = (item) => {
+  console.log(item);
+  selectedRequest.value = item;
+  showDetailModal.value = true;
+};
+
 onMounted(loadData);
 </script>
 
@@ -468,5 +581,112 @@ legend {
   background-color: #f0f7ff;
   color: #0067b1;
   font-weight: bold;
+}
+
+.thumbnail {
+  width: 35px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.badge.IN_PREPARAZIONE {
+  background: #fff3cd;
+  color: #856404;
+}
+.badge.INVIATA {
+  background: #d4edda;
+  color: #155724;
+}
+.badge.RESPINTA {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #0067b1;
+  transition: opacity 0.2s;
+}
+.btn-icon.print {
+  color: #ff5900;
+}
+.btn-icon:hover {
+  opacity: 0.7;
+}
+
+.detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 30px;
+}
+
+.detail-images {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.image-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.image-box label {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #666;
+}
+
+.full-img {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.full-img.signature {
+  height: 80px;
+  object-fit: contain;
+}
+
+.detail-info section {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.detail-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  color: #0067b1;
+}
+
+.detail-info p {
+  margin: 5px 0;
+  font-size: 0.9rem;
+}
+
+.images-container {
+  display: flex;
 }
 </style>
