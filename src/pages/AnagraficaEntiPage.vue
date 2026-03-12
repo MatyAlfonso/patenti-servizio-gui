@@ -42,6 +42,12 @@
     <div v-if="loading">Caricando enti...</div>
     <div v-else-if="error">{{ error }}</div>
     <DataTable v-else :items="entities" :columns="tableColumns" />
+    <Toast
+      :show="toast.show"
+      :message="toast.message"
+      :type="toast.type"
+      @close="toast.show = false"
+    />
   </div>
 </template>
 
@@ -51,6 +57,7 @@ import { apiClient } from "@/services/api";
 import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
+import Toast from "@/components/Toast.vue";
 
 const entities = ref([]);
 const loading = ref(true);
@@ -70,6 +77,12 @@ const tableColumns = [
   { key: "descrizione", label: "Descrizione" },
 ];
 
+const toast = ref({
+  show: false,
+  message: "",
+  type: "success",
+});
+
 const loadEntities = async () => {
   try {
     loading.value = true;
@@ -88,11 +101,19 @@ const submitNewEntity = async () => {
     showModal.value = false;
     entityForm.value = { ...initialEntityState };
     await loadEntities();
+    showToast("Ente salvato con successo!");
   } catch (err) {
-    alert("Errore nella creazione: " + err.message);
+    showToast("Errore: " + err.message, "error");
   } finally {
     isSaving.value = false;
   }
+};
+
+const showToast = (msg, type = "success") => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 4000);
 };
 
 onMounted(loadEntities);

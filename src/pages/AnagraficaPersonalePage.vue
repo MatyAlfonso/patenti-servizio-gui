@@ -41,6 +41,12 @@
     <div v-if="loading">Caricando personale...</div>
     <div v-else-if="error">{{ error }}</div>
     <DataTable v-else :items="people" :columns="tableColumns" />
+    <Toast
+      :show="toast.show"
+      :message="toast.message"
+      :type="toast.type"
+      @close="toast.show = false"
+    />
   </div>
 </template>
 
@@ -50,6 +56,7 @@ import { apiClient } from "@/services/api";
 import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
+import Toast from "@/components/Toast.vue";
 
 const people = ref([]);
 const loading = ref(true);
@@ -75,6 +82,12 @@ const tableColumns = [
   { key: "luogo_nascita", label: "Luogo di nascita" },
 ];
 
+const toast = ref({
+  show: false,
+  message: "",
+  type: "success",
+});
+
 const loadPeople = async () => {
   try {
     loading.value = true;
@@ -93,11 +106,19 @@ const submitNewPerson = async () => {
     showModal.value = false;
     personForm.value = { ...initialPersonState };
     await loadPeople();
+    showToast("Persona salvata con successo!");
   } catch (err) {
-    alert("Errore nella creazione: " + err.message);
+    showToast("Errore: " + err.message, "error");
   } finally {
     isSaving.value = false;
   }
+};
+
+const showToast = (msg, type = "success") => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 4000);
 };
 
 onMounted(loadPeople);
