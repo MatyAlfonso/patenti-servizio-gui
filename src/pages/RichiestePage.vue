@@ -246,7 +246,7 @@
               <h3>Richiesta</h3>
               <p><strong>Ente:</strong> {{ selectedRequest.ente?.descrizione }}</p>
               <p>
-                <strong>Stato:</strong>
+                <strong>Stato: </strong>
                 <span :class="['badge', selectedRequest.id_stato]">
                   {{ selectedRequest.stato?.descrizione }}
                 </span>
@@ -304,7 +304,7 @@
       </template>
 
       <template #actions="{ item }">
-        <button class="btn-icon" @click="viewDetails(item.raw)" title="Dettagli">
+        <button class="btn-icon details" @click="viewDetails(item.raw)" title="Dettagli">
           <Icon name="visibility" size="18" />
         </button>
 
@@ -552,7 +552,7 @@ const rejectRequest = async (item) => {
       id_stato: "RESPINTA",
     });
 
-    showToast("Richiesta respinta correctamente", "info");
+    showToast("Richiesta respinta correctamente");
     showDetailModal.value = false;
     await loadData();
   } catch (err) {
@@ -693,16 +693,18 @@ legend {
   border: none;
   cursor: pointer;
   padding: 5px;
-  color: #0067b1;
   transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+.btn-icon.details {
+  color: #646464;
 }
 .btn-icon.print {
-  color: #ff5900;
+  color: #0067b1;
 }
-.btn-icon:hover {
-  opacity: 0.7;
-}
-
 .btn-reject {
   background-color: #dc3545;
   color: white;
