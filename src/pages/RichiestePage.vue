@@ -538,7 +538,7 @@ const resetForm = () => {
 
 const printLicense = async (item) => {
   try {
-    await apiClient.post(`/richieste/${item.id}/print`);
+    await apiClient.post(`/richieste/${item.id}`);
 
     showToast("Patente generata e inviata con successo!");
     await loadData();
