@@ -256,7 +256,14 @@
         </div>
 
         <div class="form-actions">
-          <button class="btn-cancel" @click="showDetailModal = false">Chiudi</button>
+          <button
+            v-if="selectedRequest.id_stato === 'IN_PREPARAZIONE'"
+            class="btn-reject"
+            @click="rejectRequest(selectedRequest)"
+          >
+            <Icon name="block" size="18" /> Respingi
+          </button>
+
           <button
             v-if="selectedRequest.id_stato === 'IN_PREPARAZIONE'"
             class="btn-save"
@@ -300,6 +307,16 @@
         <button class="btn-icon" @click="viewDetails(item.raw)" title="Dettagli">
           <Icon name="visibility" size="18" />
         </button>
+
+        <button
+          v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
+          class="btn-icon reject"
+          @click="rejectRequest(item.raw)"
+          title="Respingi"
+        >
+          <Icon name="block" size="18" />
+        </button>
+
         <button
           v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
           class="btn-icon print"
@@ -527,6 +544,22 @@ const printLicense = async (item) => {
   }
 };
 
+const rejectRequest = async (item) => {
+  if (!confirm("Sei sicuro di voler respingere questa richiesta?")) return;
+
+  try {
+    await apiClient.patch(`/richieste/${item.id}`, {
+      id_stato: "RESPINTA",
+    });
+
+    showToast("Richiesta respinta correctamente", "info");
+    showDetailModal.value = false;
+    await loadData();
+  } catch (err) {
+    showToast("Errore durante il rifiuto: " + err.message, "error");
+  }
+};
+
 const viewDetails = (item) => {
   selectedRequest.value = item;
   showDetailModal.value = true;
@@ -668,6 +701,25 @@ legend {
 }
 .btn-icon:hover {
   opacity: 0.7;
+}
+
+.btn-reject {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-reject:hover {
+  background-color: #c82333;
+}
+.btn-icon.reject {
+  color: #dc3545;
 }
 
 .detail-container {
