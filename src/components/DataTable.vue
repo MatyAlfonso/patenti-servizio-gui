@@ -4,7 +4,7 @@
       <thead>
         <tr>
           <th v-for="col in columns" :key="col.key">{{ col.label }}</th>
-          <th v-if="$slots.actions">Azioni</th>
+          <th v-if="$slots.actions">{{ actionsHeader }}</th>
         </tr>
       </thead>
       <tbody>
@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   items: {
     type: Array,
     required: true,
@@ -35,6 +35,11 @@ defineProps({
     type: Array,
     required: true,
   },
+  actionsHeader: {
+    type: String,
+    required: false,
+    default: "Azioni"
+  }
 });
 </script>
 
@@ -54,7 +59,7 @@ defineProps({
 .generic-table td {
   border: 1px solid #ddd;
   padding: 12px 8px;
-  text-align: left;
+  text-align: center;
 }
 
 .generic-table th {

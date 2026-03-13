@@ -280,7 +280,11 @@
 
     <div v-if="loading">Caricando...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable :items="filteredAndFormattedRichieste" :columns="columns">
+    <DataTable
+      :items="filteredAndFormattedRichieste"
+      :columns="columns"
+      actionsHeader="Dettaglio richiesta"
+    >
       <template #cell-foto="{ item }">
         <div class="images-container">
           <img
@@ -305,16 +309,15 @@
 
       <template #actions="{ item }">
         <button class="btn-icon details" @click="viewDetails(item.raw)" title="Dettagli">
-          <Icon name="visibility" size="18" />
+          <Icon name="visibility" size="24" />
         </button>
-
-        <button
+        <!-- <button
           v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
           class="btn-icon reject"
           @click="rejectRequest(item.raw)"
           title="Respingi"
         >
-          <Icon name="block" size="18" />
+          <Icon name="block" size="24" />
         </button>
 
         <button
@@ -323,8 +326,8 @@
           @click="printLicense(item.raw)"
           title="Stampa"
         >
-          <Icon name="print" size="18" />
-        </button>
+          <Icon name="print" size="24" />
+        </button> -->
       </template>
     </DataTable>
     <Toast
@@ -648,9 +651,26 @@ legend {
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
+
+  &:disabled {
+    background: #ccc;
+  }
 }
-.btn-save:disabled {
-  background: #ccc;
+.btn-reject {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  &:hover {
+    background-color: #c82333;
+  }
 }
 
 .option-add {
@@ -704,21 +724,6 @@ legend {
 }
 .btn-icon.print {
   color: #0067b1;
-}
-.btn-reject {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.btn-reject:hover {
-  background-color: #c82333;
 }
 .btn-icon.reject {
   color: #dc3545;
@@ -813,9 +818,9 @@ legend {
   border: 1px solid #ccc;
   background: white;
   outline: none;
-}
 
-.filter-select:focus {
-  border-color: #0067b1;
+  &:focus {
+    border-color: #0067b1;
+  }
 }
 </style>
