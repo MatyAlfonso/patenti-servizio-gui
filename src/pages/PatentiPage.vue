@@ -155,8 +155,8 @@ const formattedServizio = computed(() =>
     numero: p.numero_patente,
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
     ente: p.ente?.descrizione,
-    rilascio: p.ente?.data_rilascio,
-    scadenza: new Date(p.data_scadenza).toLocaleDateString(),
+    rilascio: p.data_rilascio,
+    scadenza: p.data_scadenza,
     raw: p,
   }))
 );
@@ -167,8 +167,8 @@ const formattedCivile = computed(() =>
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
     numero: p.numero,
     categoria: p.categoria?.id,
-    rilascio: p.ente?.data_rilascio,
-    scadenza: new Date(p.data_scadenza).toLocaleDateString(),
+    rilascio: p.data_rilascio,
+    scadenza:p.data_scadenza,
     raw: p,
   }))
 );
