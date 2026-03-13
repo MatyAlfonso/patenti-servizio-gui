@@ -13,6 +13,10 @@
             <option value="INVIATA">Inviata</option>
             <option value="RESPINTA">Respinta</option>
           </select>
+          <select v-model="sortOrder" class="filter-select">
+            <option value="DESC">Più recenti</option>
+            <option value="ASC">Più antichi</option>
+          </select>
         </div>
       </div>
 
@@ -334,6 +338,7 @@ const isSaving = ref(false);
 const error = ref(null);
 const searchQuery = ref("");
 const statusFilter = ref("ALL");
+const sortOrder = ref("DESC");
 
 const richieste = ref([]);
 const people = ref([]);
@@ -412,7 +417,9 @@ const filteredAndFormattedRichieste = computed(() => {
     );
   }
 
-  return result.sort((a, b) => a.data_raw - b.data_raw);
+  return result.sort((a, b) => {
+    return sortOrder.value === "ASC" ? a.data_raw - b.data_raw : b.data_raw - a.data_raw;
+  });
 });
 
 const loadData = async () => {
@@ -756,9 +763,5 @@ legend {
 
 .filter-select:focus {
   border-color: #0067b1;
-}
-
-:deep(.row-urgent) {
-  border-left: 4px solid #ff5900;
 }
 </style>
