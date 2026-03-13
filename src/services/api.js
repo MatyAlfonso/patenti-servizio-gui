@@ -1,26 +1,33 @@
 const BASE_URL = '/api';
 
-export const apiClient = {
-    async get(endpoint) {
-        const response = await fetch(`${BASE_URL}${endpoint}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-    },
+const request = async (method, endpoint, data = null) => {
+    const isFormData = data instanceof FormData;
+    const options = {
+        method,
+        headers: {}
+    };
 
-    async post(endpoint, data) {
-        const isFormData = data instanceof FormData;
-
-        const options = {
-            method: 'POST',
-            body: isFormData ? data : JSON.stringify(data)
-        };
-
+    if (data) {
+        options.body = isFormData ? data : JSON.stringify(data);
         if (!isFormData) {
-            options.headers = { 'Content-Type': 'application/json' };
+            options.headers['Content-Type'] = 'application/json';
         }
-
-        const response = await fetch(`${BASE_URL}${endpoint}`, options);
-        if (!response.ok) throw new Error('Error in POST request');
-        return response.json();
     }
+
+    const response = await fetch(`${BASE_URL}${endpoint}`, options);
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error in ${method} request`);
+    }
+
+    return response.json();
+};
+
+export const apiClient = {
+    get: (endpoint) => request('GET', endpoint),
+    post: (endpoint, data) => request('POST', endpoint, data),
+    patch: (endpoint, data) => request('PATCH', endpoint, data),
+    put: (endpoint, data) => request('PUT', endpoint, data),
+    delete: (endpoint) => request('DELETE', endpoint)
 };
