@@ -32,7 +32,7 @@
       <DataTable
         :items="activeTab === 'servizio' ? formattedServizio : formattedCivile"
         :columns="activeTab === 'servizio' ? colsServizio : colsCivile"
-        actionsHeader="Azioni documento"
+        actionsHeader="Gestione patente"
       >
         <template #cell-stato="{ item }">
           <span :class="['badge', item.raw.id_stato]">
@@ -43,7 +43,7 @@
         <template #actions="{ item }">
           <div class="action-buttons">
             <button
-              class="btn-icon warning"
+              class="btn-icon print"
               @click="
                 activeTab === 'servizio'
                   ? openStatusModal(item.raw, 'servizio')
@@ -51,7 +51,7 @@
               "
               title="Cambia stato"
             >
-              <Icon name="report_problem" size="24" />
+              <Icon name="settings" size="24" />
             </button>
           </div>
         </template>

@@ -10,13 +10,13 @@
         <router-link to="/richieste">Richieste</router-link>
       </li>
       <li>
+        <router-link to="/patenti">Patenti</router-link>
+      </li>
+      <li>
         <router-link to="/anagrafica_personale">Anagrafica del personale</router-link>
       </li>
       <li>
         <router-link to="/anagrafica_enti">Anagrafica degli enti</router-link>
-      </li>
-      <li>
-        <router-link to="/patenti">Patenti civili e di servizio</router-link>
       </li>
     </ul>
   </nav>
