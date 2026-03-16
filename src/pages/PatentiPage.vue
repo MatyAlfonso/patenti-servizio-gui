@@ -108,6 +108,7 @@ import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import Filter from "@/components/Filter.vue";
+import { formatDate } from "@/utils/formatters";
 
 const activeTab = ref("servizio");
 const patentiServizio = ref([]);
@@ -220,7 +221,7 @@ const formattedServizio = computed(() =>
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
     //numero: p.numero,
     ente: p.id_ente,
-    rilascio: p.data_rilascio,
+    rilascio: formatDate(p.data_rilascio),
     //scadenza: p.data_scadenza,
     raw: p,
   }))
@@ -232,8 +233,8 @@ const formattedCivile = computed(() =>
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
     numero: p.numero,
     categoria: p.categoria?.id,
-    rilascio: p.data_rilascio,
-    scadenza: p.data_scadenza,
+    rilascio: formatDate(p.data_rilascio),
+    scadenza: formatDate(p.data_scadenza),
     raw: p,
   }))
 );

@@ -61,6 +61,7 @@ import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
 import SearchBar from "@/components/SearchBar.vue";
+import { formatDate } from "@/utils/formatters";
 
 const people = ref([]);
 const loading = ref(true);
@@ -96,15 +97,20 @@ const toast = ref({
 const filteredPeople = computed(() => {
   const query = searchQuery.value.toLowerCase();
 
-  if (!query) return people.value;
-
-  return people.value.filter((p) => {
-    return (
-      p.cognome.toLowerCase().includes(query) ||
-      p.nome.toLowerCase().includes(query) ||
-      p.codice_fiscale.toLowerCase().includes(query)
+  let result = people.value;
+  if (query) {
+    result = result.filter(
+      (p) =>
+        p.cognome.toLowerCase().includes(query) ||
+        p.nome.toLowerCase().includes(query) ||
+        p.codice_fiscale.toLowerCase().includes(query)
     );
-  });
+  }
+
+  return result.map((p) => ({
+    ...p,
+    data_nascita: formatDate(p.data_nascita),
+  }));
 });
 
 const loadPeople = async () => {
