@@ -6,18 +6,11 @@
       <div class="toolbar">
         <SearchBar v-model="searchQuery" placeholder="Cerca per cognome, nome o CF..." />
 
-        <div class="filter-group">
-          <select v-model="statusFilter" class="filter-select">
-            <option value="ALL">Tutti gli stati</option>
-            <option value="IN_PREPARAZIONE">In preparazione</option>
-            <option value="INVIATA">Inviata</option>
-            <option value="RESPINTA">Respinta</option>
-          </select>
-          <select v-model="sortOrder" class="filter-select">
-            <option value="DESC">Più recenti</option>
-            <option value="ASC">Più antichi</option>
-          </select>
-        </div>
+        <Filter
+          v-model:statusFilter="statusFilter"
+          v-model:sortOrder="sortOrder"
+          :options="statusOptions"
+        />
       </div>
 
       <button class="btn-new" @click="showModal = true">
@@ -311,23 +304,6 @@
         <button class="btn-icon details" @click="viewDetails(item.raw)" title="Dettagli">
           <Icon name="visibility" size="24" />
         </button>
-        <!-- <button
-          v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
-          class="btn-icon reject"
-          @click="rejectRequest(item.raw)"
-          title="Respingi"
-        >
-          <Icon name="block" size="24" />
-        </button>
-
-        <button
-          v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
-          class="btn-icon print"
-          @click="printLicense(item.raw)"
-          title="Stampa"
-        >
-          <Icon name="print" size="24" />
-        </button> -->
       </template>
     </DataTable>
     <Toast
@@ -347,6 +323,7 @@ import Modal from "@/components/Modal.vue";
 import Toast from "@/components/Toast.vue";
 import Icon from "@/components/Icon.vue";
 import SearchBar from "@/components/SearchBar.vue";
+import Filter from "@/components/Filter.vue";
 
 const showModal = ref(false);
 const showPersonModal = ref(false);
@@ -405,6 +382,12 @@ const columns = [
   { key: "tipo_richiesta", label: "Tipo" },
   { key: "stato_richiesta", label: "Stato" },
   { key: "foto", label: "Allegati" },
+];
+
+const statusOptions = [
+  { value: "IN_PREPARAZIONE", label: "In preparazione" },
+  { value: "INVIATA", label: "Inviata" },
+  { value: "RESPINTA", label: "Respinta" },
 ];
 
 const filteredAndFormattedRichieste = computed(() => {
@@ -797,30 +780,5 @@ legend {
   align-items: center;
   justify-content: center;
   gap: 20px;
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: 1rem;
-}
-
-.filter-group label {
-  font-weight: bold;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.filter-select {
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background: white;
-  outline: none;
-
-  &:focus {
-    border-color: #0067b1;
-  }
 }
 </style>

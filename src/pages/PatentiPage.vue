@@ -3,7 +3,14 @@
     <div class="header-section">
       <h2>Gestione patenti</h2>
 
-      <SearchBar v-model="searchQuery" placeholder="Cerca per nome o cognome..." />
+      <div class="toolbar">
+        <SearchBar v-model="searchQuery" placeholder="Cerca per nome o cognome..." />
+        <Filter
+          v-model:statusFilter="statusFilter"
+          v-model:sortOrder="sortOrder"
+          :options="statusOptions"
+        />
+      </div>
 
       <div class="tabs">
         <button
@@ -100,12 +107,15 @@ import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
 import SearchBar from "@/components/SearchBar.vue";
+import Filter from "@/components/Filter.vue";
 
 const activeTab = ref("servizio");
 const patentiServizio = ref([]);
 const patentiCivile = ref([]);
 const toast = ref({ show: false, message: "", type: "success" });
 const searchQuery = ref("");
+const statusFilter = ref("ALL");
+const sortOrder = ref("DESC");
 
 const statusModal = ref({
   show: false,
@@ -133,27 +143,75 @@ const colsCivile = [
   { key: "stato", label: "Stato" },
 ];
 
+const statusOptions = computed(() => {
+  if (activeTab.value === "servizio") {
+    return [
+      { value: "ATTIVA", label: "Attiva" },
+      { value: "IN_PREPARAZIONE", label: "In preparazione" },
+      { value: "ANNULLATA", label: "Annullata" },
+      { value: "REVOCATA", label: "Revocata" },
+      { value: "SCADUTA", label: "Scaduta" },
+      { value: "RUBATA", label: "Rubata" },
+      { value: "SMARRITA", label: "Smarrita" },
+      { value: "SOSPESA", label: "Sospesa" },
+    ];
+  } else {
+    return [
+      { value: "ATTIVA", label: "Attiva" },
+      { value: "REVOCATA", label: "Revocata" },
+      { value: "SCADUTA", label: "Scaduta" },
+      { value: "RUBATA", label: "Rubata" },
+      { value: "SMARRITA", label: "Smarrita" },
+      { value: "SOSPESA", label: "Sospesa" },
+    ];
+  }
+});
+
 const filteredServizioRaw = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
-  if (!query) return patentiServizio.value;
+  let result = [...patentiServizio.value];
 
-  return patentiServizio.value.filter(
-    (p) =>
-      p.persona?.nome?.toLowerCase().includes(query) ||
-      p.persona?.cognome?.toLowerCase().includes(query)
-  );
+  if (query) {
+    result = result.filter(
+      (p) =>
+        p.persona?.nome?.toLowerCase().includes(query) ||
+        p.persona?.cognome?.toLowerCase().includes(query)
+    );
+  }
+
+  if (statusFilter.value !== "ALL") {
+    result = result.filter((p) => p.id_stato === statusFilter.value);
+  }
+
+  return result.sort((a, b) => {
+    const dateA = new Date(a.data_rilascio);
+    const dateB = new Date(b.data_rilascio);
+    return sortOrder.value === "ASC" ? dateA - dateB : dateB - dateA;
+  });
 });
 
 const filteredCivileRaw = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
-  if (!query) return patentiCivile.value;
+  let result = [...patentiCivile.value];
 
-  return patentiCivile.value.filter(
-    (p) =>
-      p.persona?.nome?.toLowerCase().includes(query) ||
-      p.persona?.cognome?.toLowerCase().includes(query) ||
-      p.numero?.toLowerCase().includes(query)
-  );
+  if (query) {
+    result = result.filter(
+      (p) =>
+        p.persona?.nome?.toLowerCase().includes(query) ||
+        p.persona?.cognome?.toLowerCase().includes(query) ||
+        p.numero?.toLowerCase().includes(query)
+    );
+  }
+
+  if (statusFilter.value !== "ALL") {
+    result = result.filter((p) => p.id_stato === statusFilter.value);
+  }
+
+  return result.sort((a, b) => {
+    const dateA = new Date(a.data_scadenza);
+    const dateB = new Date(b.data_scadenza);
+    return sortOrder.value === "ASC" ? dateA - dateB : dateB - dateA;
+  });
 });
 
 const formattedServizio = computed(() =>
@@ -231,6 +289,13 @@ onMounted(loadData);
 </script>
 
 <style scoped>
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
 .header-section {
   display: flex;
   justify-content: space-between;
