@@ -3,6 +3,8 @@
     <div class="header-section">
       <h2>Gestione patenti</h2>
 
+      <SearchBar v-model="searchQuery" placeholder="Cerca per nome o cognome..." />
+
       <div class="tabs">
         <button
           :class="['tab-btn', { active: activeTab === 'servizio' }]"
@@ -97,11 +99,13 @@ import DataTable from "@/components/DataTable.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
+import SearchBar from "@/components/SearchBar.vue";
 
 const activeTab = ref("servizio");
 const patentiServizio = ref([]);
 const patentiCivile = ref([]);
 const toast = ref({ show: false, message: "", type: "success" });
+const searchQuery = ref("");
 
 const statusModal = ref({
   show: false,
@@ -129,8 +133,31 @@ const colsCivile = [
   { key: "stato", label: "Stato" },
 ];
 
+const filteredServizioRaw = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+  if (!query) return patentiServizio.value;
+
+  return patentiServizio.value.filter(
+    (p) =>
+      p.persona?.nome?.toLowerCase().includes(query) ||
+      p.persona?.cognome?.toLowerCase().includes(query)
+  );
+});
+
+const filteredCivileRaw = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+  if (!query) return patentiCivile.value;
+
+  return patentiCivile.value.filter(
+    (p) =>
+      p.persona?.nome?.toLowerCase().includes(query) ||
+      p.persona?.cognome?.toLowerCase().includes(query) ||
+      p.numero?.toLowerCase().includes(query)
+  );
+});
+
 const formattedServizio = computed(() =>
-  patentiServizio.value.map((p) => ({
+  filteredServizioRaw.value.map((p) => ({
     id: p.id,
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
     //numero: p.numero,
@@ -142,7 +169,7 @@ const formattedServizio = computed(() =>
 );
 
 const formattedCivile = computed(() =>
-  patentiCivile.value.map((p) => ({
+  filteredCivileRaw.value.map((p) => ({
     id: p.id,
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
     numero: p.numero,
