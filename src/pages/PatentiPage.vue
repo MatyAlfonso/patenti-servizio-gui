@@ -19,10 +19,10 @@
       </div>
     </div>
 
-    <div v-if="activeTab === 'servizio'" class="tab-content">
+    <div class="tab-content">
       <DataTable
-        :items="formattedServizio"
-        :columns="colsServizio"
+        :items="activeTab === 'servizio' ? formattedServizio : formattedCivile"
+        :columns="activeTab === 'servizio' ? colsServizio : colsCivile"
         actionsHeader="Azioni documento"
       >
         <template #cell-stato="{ item }">
@@ -34,44 +34,17 @@
         <template #actions="{ item }">
           <div class="action-buttons">
             <button
-              v-if="item.raw.id_stato === 'ATTIVA'"
               class="btn-icon warning"
-              @click="openStatusModal(item.raw, 'servizio')"
+              @click="
+                activeTab === 'servizio'
+                  ? openStatusModal(item.raw, 'servizio')
+                  : openStatusModal(item.raw, 'civile')
+              "
               title="Cambia stato"
             >
               <Icon name="report_problem" size="24" />
             </button>
-            <button class="btn-icon print" title="Stampa duplicato">
-              <Icon name="print" size="24" />
-            </button>
           </div>
-        </template>
-      </DataTable>
-    </div>
-
-    <div v-else class="tab-content">
-      <DataTable
-        :items="formattedCivile"
-        :columns="colsCivile"
-        actionsHeader="Aggiorna stato"
-      >
-        <template #cell-stato="{ item }">
-          <span :class="['badge', item.raw.id_stato]">
-            {{ item.raw.stato?.descrizione }}
-          </span>
-        </template>
-
-        <template #actions="{ item }">
-          <select
-            :value="item.raw.id_stato"
-            @change="(e) => updateCivileStatus(item.raw.id, e.target.value)"
-            class="status-select-mini"
-          >
-            <option value="ATTIVA">Attiva</option>
-            <option value="SCADUTA">Scaduta</option>
-            <option value="SOSPESA">Sospesa</option>
-            <option value="REVOCATA">Revocata</option>
-          </select>
         </template>
       </DataTable>
     </div>
@@ -89,9 +62,16 @@
         <div class="form-group">
           <label>Seleziona nuovo stato:</label>
           <select v-model="statusModal.newState">
+            <option v-if="activeTab === 'servizio'" value="ANNULLATA">Annullata</option>
+            <option value="ATTIVA">Attiva</option>
+            <option v-if="activeTab === 'servizio'" value="IN_PREPARAZIONE">
+              In preparazione
+            </option>
+            <option value="REVOCATA">Revocata</option>
+            <option value="SCADUTA">Scaduta</option>
             <option value="RUBATA">Rubata</option>
             <option value="SMARRITA">Smarrita</option>
-            <option value="REVOCATA">Revocata</option>
+            <option value="SOSPESA">Sospesa</option>
           </select>
         </div>
         <div class="form-actions">
@@ -128,15 +108,15 @@ const statusModal = ref({
   title: "Gestione stato patente",
   targetId: null,
   targetName: "",
-  newState: "RUBATA",
+  newState: "",
 });
 
 const colsServizio = [
-  { key: "numero", label: "Numero" },
+  //{ key: "numero", label: "Numero" },
   { key: "titolare", label: "Titolare" },
   { key: "ente", label: "Ente" },
   { key: "rilascio", label: "Data di rilascio" },
-  { key: "scadenza", label: "Data di scadenza" },
+  //{ key: "scadenza", label: "Data di scadenza" },
   { key: "stato", label: "Stato" },
 ];
 
@@ -152,11 +132,11 @@ const colsCivile = [
 const formattedServizio = computed(() =>
   patentiServizio.value.map((p) => ({
     id: p.id,
-    numero: p.numero_patente,
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
-    ente: p.ente?.descrizione,
+    //numero: p.numero,
+    ente: p.id_ente,
     rilascio: p.data_rilascio,
-    scadenza: p.data_scadenza,
+    //scadenza: p.data_scadenza,
     raw: p,
   }))
 );
@@ -168,7 +148,7 @@ const formattedCivile = computed(() =>
     numero: p.numero,
     categoria: p.categoria?.id,
     rilascio: p.data_rilascio,
-    scadenza:p.data_scadenza,
+    scadenza: p.data_scadenza,
     raw: p,
   }))
 );
@@ -186,38 +166,28 @@ const loadData = async () => {
   }
 };
 
-const updateCivileStatus = async (id, nuevoStato) => {
-  if (
-    !confirm(
-      `Cambiare lo stato della patente civile? Questo potrebbe disabilitare la patente di servizio collegata.`
-    )
-  )
-    return;
-  try {
-    await apiClient.patch(`/patenti-civili/${id}`, { id_stato: nuevoStato });
-    showToast("Stato aggiornato con successo");
-    await loadData();
-  } catch (e) {
-    showToast(e.message, "error");
-  }
-};
-
 const openStatusModal = (patente, tipo) => {
   statusModal.value = {
     show: true,
     title: `Gestione patente ${tipo === "servizio" ? "di servizio" : "Civile"}`,
     targetId: patente.id,
     targetName: `${patente.persona?.cognome} ${patente.persona?.nome}`,
-    newState: "RUBATA",
+    newState: patente.id_stato,
   };
 };
 
 const confirmStatusChange = async () => {
   try {
-    await apiClient.patch(`/patenti-servizio/${statusModal.value.targetId}`, {
+    const endpoint =
+      activeTab.value === "servizio"
+        ? `/patenti-servizio/${statusModal.value.targetId}`
+        : `/patenti-civili/${statusModal.value.targetId}`;
+
+    await apiClient.patch(endpoint, {
       id_stato: statusModal.value.newState,
     });
-    showToast("Patente aggiornata");
+
+    showToast("Stato aggiornato con successo");
     statusModal.value.show = false;
     await loadData();
   } catch (e) {
@@ -311,11 +281,16 @@ onMounted(loadData);
   background: #fff3cd;
   color: #856404;
 }
-.badge.INVIATA {
+.badge.ATTIVA {
   background: #d4edda;
   color: #155724;
 }
-.badge.RESPINTA {
+.badge.REVOCATA,
+.badge.SCADUTA,
+.badge.SOSPESA,
+.badge.ANNULLATA,
+.badge.RUBATA,
+.badge.SMARRITA {
   background: #f8d7da;
   color: #721c24;
 }
