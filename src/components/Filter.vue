@@ -6,9 +6,9 @@
       class="filter-select"
     >
       <option value="ALL">Tutti gli stati</option>
-      <option value="IN_PREPARAZIONE">In preparazione</option>
-      <option value="INVIATA">Inviata</option>
-      <option value="RESPINTA">Respinta</option>
+      <option v-for="opt in options" :key="opt.value" :value="opt.value">
+        {{ opt.label }}
+      </option>
     </select>
 
     <select
@@ -26,6 +26,10 @@
 defineProps({
   statusFilter: String,
   sortOrder: String,
+  options: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 defineEmits(["update:statusFilter", "update:sortOrder"]);
