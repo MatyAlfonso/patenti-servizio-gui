@@ -206,7 +206,7 @@
               </p>
               <p>
                 <strong>Data di nascita:</strong>
-                {{ selectedRequest.persona?.data_nascita }}
+                {{ formatDate(selectedRequest.persona?.data_nascita) }}
               </p>
               <p>
                 <strong>Luogo di nascita:</strong>
@@ -324,6 +324,7 @@ import Toast from "@/components/Toast.vue";
 import Icon from "@/components/Icon.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import Filter from "@/components/Filter.vue";
+import { formatDate } from "@/utils/formatters";
 
 const showModal = ref(false);
 const showPersonModal = ref(false);
