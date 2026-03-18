@@ -24,32 +24,72 @@
       @close="showModal = false"
     >
       <form @submit.prevent="submitRequest" class="grid-form">
-        <fieldset>
-          <legend>Tipologia</legend>
-          <div class="file-grid">
-            <div class="form-group">
-              <label>Ente</label>
-              <select v-model="form.id_ente" required>
-                <option disabled value="">Seleziona l'ente...</option>
-                <option v-for="e in entities" :key="e.id" :value="e.id">
-                  {{ e.id }} - {{ e.descrizione }}
-                </option>
-              </select>
+        <div class="flex">
+          <h4>MODULO RICHIESTA RILASCIO PATENTE DI SERVIZIO --</h4>
+          <label
+            ><input type="radio" value="NUOVA" v-model="form.id_tipo" required />
+            Nuova</label
+          >
+          <label
+            ><input type="radio" value="RINNOVO" v-model="form.id_tipo" required />
+            Rinnovo</label
+          >
+        </div>
+
+        <div class="header-group">
+          <div class="form-group">
+            <div style="align-items: flex-end">
+              <label>Foto formato 33x40 mm</label>
+              <div class="foto">
+                <input
+                  type="file"
+                  @change="(e) => handleFile(e, 'foto')"
+                  accept="image/*"
+                  required
+                  class="fileInput"
+                />
+                <img
+                  v-if="previews.foto"
+                  :src="previews.foto"
+                  style="width: 100%; height: 100%; object-fit: cover"
+                />
+              </div>
             </div>
             <div class="form-group">
-              <label>Tipo richiesta</label>
-              <select v-model="form.id_tipo" required>
-                <option v-for="t in requestTypes" :key="t.id" :value="t.id">
-                  {{ t.descrizione }}
-                </option>
-              </select>
+              <label>Firmare all'interno del riquadro</label>
+              <div class="firma">
+                <input
+                  type="file"
+                  @change="(e) => handleFile(e, 'firma')"
+                  accept="image/*"
+                  required
+                  class="fileInput"
+                />
+                <img
+                  v-if="previews.firma"
+                  :src="previews.firma"
+                  style="max-height: 90%; max-width: 90%"
+                />
+              </div>
             </div>
           </div>
-        </fieldset>
+
+          <div class="form-group">
+            <label>Tipologia</label>
+            <label class="radio-label"
+              ><input type="radio" value="PCR" v-model="form.id_ente" required />
+              Protezione Civile della Regione</label
+            >
+            <label class="radio-label"
+              ><input type="radio" value="CFR" v-model="form.id_ente" required /> Corpo
+              Forestale Regionale</label
+            >
+          </div>
+        </div>
 
         <fieldset>
-          <legend>Dati personali</legend>
-          <div class="form-group">
+          <legend>DATI PERSONALI</legend>
+          <div class="form-group-row">
             <label>Cognome e nome</label>
             <select v-model="form.id_persona" @change="checkNewPerson" required>
               <option disabled value="">Seleziona...</option>
@@ -61,12 +101,45 @@
               </option>
             </select>
           </div>
-          <div class="form-group">
+
+          <div>
+            <div class="form-group-row">
+              <label>Codice Fiscale</label>
+              <input
+                :value="selectedPerson?.codice_fiscale"
+                type="text"
+                readonly
+                style="background: #f0f0f0"
+              />
+            </div>
+            <div>
+              <div class="form-group-row">
+                <label>Data di nascita</label>
+                <input
+                  :value="formatDate(selectedPerson?.data_nascita)"
+                  type="text"
+                  readonly
+                  style="background: #f0f0f0"
+                />
+              </div>
+              <div class="form-group-row">
+                <label>Luogo di nascita</label>
+                <input
+                  :value="selectedPerson?.luogo_nascita"
+                  type="text"
+                  readonly
+                  style="background: #f0f0f0"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group-row">
             <label>Residenza</label>
             <input v-model="form.residenza_persona" type="text" required />
           </div>
-          <div class="form-group">
-            <label>Direzione / Servizio di appartenenza </label>
+          <div class="form-group-row">
+            <label>Direzione / Servizio di appartenenza</label>
             <input v-model="form.direzione_servizio" type="text" required />
           </div>
         </fieldset>
@@ -109,13 +182,13 @@
         </Modal>
 
         <fieldset>
-          <legend>Dati patente civile posseduta</legend>
-          <div class="file-grid">
-            <div class="form-group">
+          <legend>DATI PATENTE CIVILE POSSEDUTA</legend>
+          <div>
+            <div class="form-group-row">
               <label>Numero</label>
               <input v-model="form.patente_civile_numero" type="text" required />
             </div>
-            <div class="form-group">
+            <div class="form-group-row">
               <label>Categoria patente civile</label>
               <select v-model="form.patente_civile_categorie" required>
                 <option disabled value="">Seleziona categoria...</option>
@@ -125,38 +198,14 @@
               </select>
             </div>
           </div>
-          <div class="file-grid">
-            <div class="form-group">
+          <div>
+            <div class="form-group-row">
               <label>Data rilascio</label>
               <input v-model="form.patente_civile_rilascio" type="date" required />
             </div>
-            <div class="form-group">
+            <div class="form-group-row">
               <label>Valida fino al </label>
               <input v-model="form.patente_civile_scadenza" type="date" required />
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Documentazione</legend>
-          <div class="file-grid">
-            <div class="form-group">
-              <label>Foto (33x40 mm)</label>
-              <input
-                type="file"
-                @change="(e) => handleFile(e, 'foto')"
-                accept="image/*"
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label>Firma</label>
-              <input
-                type="file"
-                @change="(e) => handleFile(e, 'firma')"
-                accept="image/*"
-                required
-              />
             </div>
           </div>
         </fieldset>
@@ -373,6 +422,20 @@ const toast = ref({
   type: "success",
 });
 
+const selectedPerson = computed(() => {
+  if (!form.value.id_persona) return null;
+  return people.value.find((p) => p.id === form.value.id_persona);
+});
+
+const previews = ref({ foto: null, firma: null });
+const handleFile = (e, type) => {
+  const file = e.target.files[0];
+  if (file) {
+    files[type] = file;
+    previews.value[type] = URL.createObjectURL(file);
+  }
+};
+
 const files = { foto: null, firma: null };
 
 const columns = [
@@ -459,10 +522,6 @@ const showToast = (msg, type = "success") => {
   setTimeout(() => {
     toast.value.show = false;
   }, 4000);
-};
-
-const handleFile = (e, type) => {
-  files[type] = e.target.files[0];
 };
 
 const submitRequest = async () => {
@@ -568,6 +627,41 @@ legend {
   padding: 0 10px;
 }
 
+.flex {
+  display: flex;
+  align-items: center;
+}
+.firma {
+  width: 300px;
+  height: 100px;
+  border: 1px solid black;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+.foto {
+  width: 132px;
+  height: 160px;
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  background: #f9f9f9;
+}
+.fileInput {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
 .header-section {
   display: flex;
   justify-content: space-between;
@@ -588,6 +682,35 @@ legend {
   display: flex;
   flex-direction: column;
   gap: 15px;
+}
+.header-group {
+  display: flex;
+}
+.form-group-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 5px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #555;
+}
+.form-group-row input,
+.form-group-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-group-row label {
+  white-space: nowrap;
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.form-group-row {
+  margin-bottom: 10px;
+  align-items: center;
 }
 .form-group {
   display: flex;
