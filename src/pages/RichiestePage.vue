@@ -201,11 +201,7 @@
           <div>
             <div class="form-group-row">
               <label>Rilasciata da</label>
-              <input
-                v-model="form.patente_civile_autorita"
-                type="text"
-                required
-              />
+              <input v-model="form.patente_civile_autorita" type="text" required />
             </div>
             <div class="form-group-row">
               <label>Data del rilascio</label>
@@ -288,11 +284,11 @@
               </p>
               <p>
                 <strong>Data del rilascio:</strong>
-                {{ selectedRequest.persona?.patente_civile[0].data_rilascio }}
+                {{ formatDate(selectedRequest.persona?.patente_civile[0].data_rilascio) }}
               </p>
               <p>
                 <strong>Data di scadenza:</strong>
-                {{ selectedRequest.persona?.patente_civile[0].data_scadenza }}
+                {{ formatDate(selectedRequest.persona?.patente_civile[0].data_scadenza) }}
               </p>
             </section>
 
@@ -587,26 +583,31 @@ const submitNewPerson = async () => {
 };
 
 const resetForm = () => {
+  if (previews.value.foto) URL.revokeObjectURL(previews.value.foto);
+  if (previews.value.firma) URL.revokeObjectURL(previews.value.firma);
+
   form.value = { ...initialFormState };
   files.foto = null;
   files.firma = null;
+  previews.value = { foto: null, firma: null };
 };
 
 const printLicense = async (item) => {
+  let url = null;
   try {
     await apiClient.post(`/richieste/${item.id}`);
-    
+
     showToast("Richiesta approvata. Generazione PDF...");
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const response = await apiClient.get(`/richieste/${item.id}/pdf`, {
       responseType: "blob",
     });
 
-    const blob = new Blob([response], { type: 'application/pdf' });
+    const blob = new Blob([response], { type: "application/pdf" });
     const url = window.URL.createObjectURL(blob);
-    
+
     const printWindow = window.open(url);
     if (printWindow) {
       printWindow.onload = () => {
@@ -624,8 +625,10 @@ const printLicense = async (item) => {
 
     await loadData();
   } catch (err) {
+    if (url) window.URL.revokeObjectURL(url);
     console.error("Errore durante el proceso:", err);
-    const msg = err.response?.data?.error || "Errore durante la generazione del documento";
+    const msg =
+      err.response?.data?.error || "Errore durante la generazione del documento";
     showToast(msg, "error");
   }
 };
