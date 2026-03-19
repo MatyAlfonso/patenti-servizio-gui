@@ -185,7 +185,7 @@
           <legend>DATI PATENTE CIVILE POSSEDUTA</legend>
           <div>
             <div class="form-group-row">
-              <label>Numero</label>
+              <label>Numero della patente</label>
               <input v-model="form.patente_civile_numero" type="text" required />
             </div>
             <div class="form-group-row">
@@ -200,11 +200,19 @@
           </div>
           <div>
             <div class="form-group-row">
-              <label>Data rilascio</label>
+              <label>Rilasciata da</label>
+              <input
+                v-model="form.patente_civile_autorita"
+                type="text"
+                required
+              />
+            </div>
+            <div class="form-group-row">
+              <label>Data del rilascio</label>
               <input v-model="form.patente_civile_rilascio" type="date" required />
             </div>
             <div class="form-group-row">
-              <label>Valida fino al </label>
+              <label>Data di scadenza </label>
               <input v-model="form.patente_civile_scadenza" type="date" required />
             </div>
           </div>
@@ -275,11 +283,15 @@
                 {{ selectedRequest.persona?.patente_civile[0].id_categoria }}
               </p>
               <p>
-                <strong>Data rilascio:</strong>
+                <strong>Rilasciata da:</strong>
+                {{ selectedRequest.persona?.patente_civile[0].autorita }}
+              </p>
+              <p>
+                <strong>Data del rilascio:</strong>
                 {{ selectedRequest.persona?.patente_civile[0].data_rilascio }}
               </p>
               <p>
-                <strong>Valida fino al:</strong>
+                <strong>Data di scadenza:</strong>
                 {{ selectedRequest.persona?.patente_civile[0].data_scadenza }}
               </p>
             </section>
@@ -408,6 +420,7 @@ const initialFormState = {
   direzione_servizio: "",
   patente_civile_numero: "",
   patente_civile_categorie: "",
+  patente_civile_autorita: "",
   patente_civile_rilascio: "",
   patente_civile_scadenza: "",
   note_richiedente: "",
@@ -582,11 +595,38 @@ const resetForm = () => {
 const printLicense = async (item) => {
   try {
     await apiClient.post(`/richieste/${item.id}`);
+    
+    showToast("Richiesta approvata. Generazione PDF...");
 
-    showToast("Patente generata e inviata con successo!");
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const response = await apiClient.get(`/richieste/${item.id}/pdf`, {
+      responseType: "blob",
+    });
+
+    const blob = new Blob([response], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    
+    const printWindow = window.open(url);
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Patente_${item.cognome}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
     await loadData();
   } catch (err) {
-    showToast("Errore durante la stampa: " + err.message, "error");
+    console.error("Errore durante el proceso:", err);
+    const msg = err.response?.data?.error || "Errore durante la generazione del documento";
+    showToast(msg, "error");
   }
 };
 
