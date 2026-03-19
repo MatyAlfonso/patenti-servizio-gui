@@ -1,10 +1,10 @@
 const BASE_URL = '/api';
 
-const request = async (method, endpoint, data = null) => {
+const request = async (method, endpoint, data = null, customOptions = {}) => {
     const isFormData = data instanceof FormData;
     const options = {
         method,
-        headers: {}
+        headers: { ...customOptions.headers }
     };
 
     if (data) {
@@ -21,11 +21,17 @@ const request = async (method, endpoint, data = null) => {
         throw new Error(errorData.error || `Error in ${method} request`);
     }
 
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/pdf') || customOptions.responseType === 'blob') {
+        return response.blob(); 
+    }
+
     return response.json();
 };
 
 export const apiClient = {
-    get: (endpoint) => request('GET', endpoint),
+    get: (endpoint, options = {}) => request('GET', endpoint, null, options),
     post: (endpoint, data) => request('POST', endpoint, data),
     patch: (endpoint, data) => request('PATCH', endpoint, data),
     put: (endpoint, data) => request('PUT', endpoint, data),
