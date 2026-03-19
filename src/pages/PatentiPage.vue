@@ -127,11 +127,11 @@ const statusModal = ref({
 });
 
 const colsServizio = [
-  //{ key: "numero", label: "Numero" },
+  { key: "numero", label: "Numero" },
   { key: "titolare", label: "Titolare" },
   { key: "ente", label: "Ente" },
   { key: "rilascio", label: "Data di rilascio" },
-  //{ key: "scadenza", label: "Data di scadenza" },
+  { key: "scadenza", label: "Data di scadenza" },
   { key: "stato", label: "Stato" },
 ];
 
@@ -219,10 +219,10 @@ const formattedServizio = computed(() =>
   filteredServizioRaw.value.map((p) => ({
     id: p.id,
     titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
-    //numero: p.numero,
+    numero: p.numero,
     ente: p.id_ente,
     rilascio: formatDate(p.data_rilascio),
-    //scadenza: p.data_scadenza,
+    scadenza: formatDate(p.patente_civile.data_scadenza),
     raw: p,
   }))
 );
