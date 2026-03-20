@@ -13,7 +13,7 @@
         />
       </div>
 
-      <button class="btn-new" @click="showModal = true">
+      <button class="btn-new" @click="openCreateModal">
         <Icon name="add" size="18" /> Nuova richiesta
       </button>
     </div>
@@ -45,7 +45,6 @@
                   type="file"
                   @change="(e) => handleFile(e, 'foto')"
                   accept="image/*"
-                  required
                   class="fileInput"
                 />
                 <img
@@ -56,13 +55,12 @@
               </div>
             </div>
             <div class="form-group">
-              <label>Firmare all'interno del riquadro</label>
+              <label>Firma</label>
               <div class="firma">
                 <input
                   type="file"
                   @change="(e) => handleFile(e, 'firma')"
                   accept="image/*"
-                  required
                   class="fileInput"
                 />
                 <img
@@ -328,12 +326,32 @@
       </div>
     </Modal>
 
+    <Modal
+      v-if="showDeleteModal"
+      title="Conferma eliminazione"
+      @close="showDeleteModal = false"
+    >
+      <div class="confirm-modal-content">
+        <p>
+          Sei sicuro di voler eliminare la richiesta di
+          <strong>{{ requestToDelete?.persona?.cognome + " " + requestToDelete?.persona?.nome }}</strong
+          >?
+        </p>
+        <div class="form-actions">
+          <button @click="showDeleteModal = false" class="btn-cancel">Annulla</button>
+          <button @click="executeDelete" class="btn-reject" :disabled="isSaving">
+            Sì, Elimina
+          </button>
+        </div>
+      </div>
+    </Modal>
+
     <div v-if="loading">Caricando...</div>
     <div v-else-if="error">{{ error }}</div>
     <DataTable
       :items="filteredAndFormattedRichieste"
       :columns="columns"
-      actionsHeader="Dettaglio richiesta"
+      actionsHeader="Gestione richiesta"
     >
       <template #cell-foto="{ item }">
         <div class="images-container">
@@ -358,9 +376,28 @@
       </template>
 
       <template #actions="{ item }">
-        <button class="btn-icon details" @click="viewDetails(item.raw)" title="Dettagli">
-          <Icon name="visibility" size="24" />
-        </button>
+        <div class="actions-wrapper">
+          <button
+            class="btn-icon details"
+            @click="viewDetails(item.raw)"
+            title="Dettagli"
+          >
+            <Icon name="visibility" size="24" />
+          </button>
+
+          <button
+            v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
+            class="btn-icon edit"
+            @click="openEditModal(item)"
+            title="Modifica"
+          >
+            <Icon name="edit" size="24" />
+          </button>
+
+          <button v-if="item.raw.id_stato === 'IN_PREPARAZIONE'" class="btn-icon delete" @click="confirmDelete(item)" title="Elimina">
+            <Icon name="delete" size="24" />
+          </button>
+        </div>
       </template>
     </DataTable>
     <Toast
@@ -394,6 +431,9 @@ const error = ref(null);
 const searchQuery = ref("");
 const statusFilter = ref("ALL");
 const sortOrder = ref("DESC");
+const isEditing = ref(false);
+const showDeleteModal = ref(false);
+const requestToDelete = ref(null);
 
 const richieste = ref([]);
 const people = ref([]);
@@ -533,22 +573,76 @@ const showToast = (msg, type = "success") => {
   }, 4000);
 };
 
+const openEditModal = (item) => {
+  isEditing.value = true;
+  const r = item.raw;
+
+  form.value = {
+    ...initialFormState,
+    id: r.id,
+    id_persona: r.id_persona,
+    id_ente: r.id_ente,
+    id_tipo: r.id_tipo,
+    residenza_persona: r.residenza_persona,
+    patente_civile_numero: r.persona?.patente_civile[0]?.numero || "",
+    patente_civile_categorie: r.persona?.patente_civile[0]?.id_categoria || "",
+    patente_civile_autorita: r.persona?.patente_civile[0]?.autorita || "",
+    patente_civile_rilascio: r.persona?.patente_civile[0]?.data_rilascio || "",
+    patente_civile_scadenza: r.persona?.patente_civile[0]?.data_scadenza || "",
+  };
+
+  previews.value.foto = r.fototessera ? `api/${r.fototessera.path}` : null;
+  previews.value.firma = r.firma_scansionata ? `api/${r.firma_scansionata.path}` : null;
+
+  showModal.value = true;
+};
+
+const openCreateModal = () => {
+  isEditing.value = false;
+  resetForm();
+  showModal.value = true;
+};
+
 const submitRequest = async () => {
   try {
     isSaving.value = true;
     const formData = new FormData();
+
     Object.keys(form.value).forEach((key) => formData.append(key, form.value[key]));
     if (files.foto) formData.append("fototessera", files.foto);
     if (files.firma) formData.append("firma", files.firma);
 
-    await apiClient.post("/richieste", formData);
+    if (isEditing.value) {
+      await apiClient.patch(`/richieste/${form.value.id}`, formData);
+    } else {
+      await apiClient.post("/richieste", formData);
+    }
 
     showModal.value = false;
     resetForm();
     await loadData();
-    showToast("Richiesta salvata con successo!");
+    showToast(isEditing.value ? "Richiesta aggiornata!" : "Richiesta salvata!");
   } catch (err) {
     showToast("Errore: " + err.message, "error");
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+const confirmDelete = (item) => {
+  requestToDelete.value = item.raw;
+  showDeleteModal.value = true;
+};
+
+const executeDelete = async () => {
+  try {
+    isSaving.value = true;
+    await apiClient.delete(`/richieste/${requestToDelete.value.id}`);
+    showToast("Richiesta eliminata");
+    await loadData();
+    showDeleteModal.value = false;
+  } catch (err) {
+    showToast(err.response?.data?.error || "Errore", "error");
   } finally {
     isSaving.value = false;
   }
@@ -876,6 +970,12 @@ legend {
   color: #0067b1;
 }
 .btn-icon.reject {
+  color: #dc3545;
+}
+.btn-icon.edit {
+  color: #0067b1;
+}
+.btn-icon.delete {
   color: #dc3545;
 }
 
