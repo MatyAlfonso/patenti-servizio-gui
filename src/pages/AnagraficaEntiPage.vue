@@ -73,7 +73,7 @@
             class="btn-delete-confirm"
             :disabled="isSaving"
           >
-            {{ isSaving ? "Eliminando..." : "Sì, Elimina" }}
+            {{ isSaving ? "Eliminando..." : "Sì, elimina" }}
           </button>
         </div>
       </div>
@@ -84,7 +84,7 @@
     <DataTable
       :items="filteredEntities"
       :columns="tableColumns"
-      actionsHeader="Modifica ente"
+      actionsHeader="Azioni"
     >
       <template #actions="{ item }">
         <div class="actions-wrapper">
@@ -321,10 +321,6 @@ onMounted(loadEntities);
 }
 .btn-icon.delete {
   color: #dc3545;
-}
-
-.confirm-modal-content {
-  text-align: center;
 }
 
 .btn-delete-confirm {
