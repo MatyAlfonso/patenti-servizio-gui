@@ -193,7 +193,7 @@
               <select v-model="form.patente_civile_categorie" required>
                 <option disabled value="">Seleziona categoria...</option>
                 <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                  {{ cat.id }} - {{ cat.descrizione }}
+                  {{ cat.id.replace("_", " ") }} - {{ cat.descrizione }}
                 </option>
               </select>
             </div>
