@@ -5,21 +5,30 @@
 
       <SearchBar v-model="searchQuery" placeholder="Cerca per codice o nome..." />
 
-      <button class="btn-new" @click="showModal = true">
-        <Icon name="add" size="18" /> Nuova ente
+      <button class="btn-new" @click="openCreateModal">
+        <Icon name="add" size="18" /> Nuovo ente
       </button>
     </div>
 
-    <Modal v-if="showModal" title="Nuovo ente" @close="showModal = false">
-      <form @submit.prevent="submitNewEntity" class="grid-form">
+    <Modal
+      v-if="showModal"
+      :title="isEditing ? 'Modifica ente' : 'Nuovo ente'"
+      @close="showModal = false"
+    >
+      <form @submit.prevent="saveEntity" class="grid-form">
         <div class="form-group">
           <label>Codice ente</label>
           <input
             v-model="entityForm.id"
             type="text"
+            :readonly="isEditing"
             placeholder="Es: PCR, CFR"
             required
-            style="text-transform: uppercase"
+            :style="[
+              isEditing ? { background: '#f0f0f0' } : {},
+              { textTransform: 'uppercase' },
+            ]"
+            @input="entityForm.id = entityForm.id.toUpperCase()"
           />
         </div>
 
@@ -42,9 +51,52 @@
       </form>
     </Modal>
 
+    <Modal
+      v-if="showDeleteModal"
+      title="Conferma eliminazione"
+      @close="showDeleteModal = false"
+    >
+      <div class="confirm-modal-content">
+        <p>
+          Sei sicuro/a di voler eliminare l'ente
+          <strong>{{ entityToDelete?.descrizione }}</strong
+          >?
+        </p>
+
+        <div class="form-actions">
+          <button type="button" @click="showDeleteModal = false" class="btn-cancel">
+            Annulla
+          </button>
+          <button
+            type="button"
+            @click="deleteEntity"
+            class="btn-delete-confirm"
+            :disabled="isSaving"
+          >
+            {{ isSaving ? "Eliminando..." : "Sì, Elimina" }}
+          </button>
+        </div>
+      </div>
+    </Modal>
+
     <div v-if="loading">Caricando enti...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable v-else :items="filteredEntities" :columns="tableColumns" />
+    <DataTable
+      :items="filteredEntities"
+      :columns="tableColumns"
+      actionsHeader="Modifica ente"
+    >
+      <template #actions="{ item }">
+        <div class="actions-wrapper">
+          <button class="btn-icon edit" @click="openEditModal(item)" title="Modifica">
+            <Icon name="edit" size="24" />
+          </button>
+          <button class="btn-icon delete" @click="confirmDelete(item)" title="Elimina">
+            <Icon name="delete" size="24" />
+          </button>
+        </div>
+      </template>
+    </DataTable>
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -69,6 +121,9 @@ const isSaving = ref(false);
 const showModal = ref(false);
 const error = ref(null);
 const searchQuery = ref("");
+const isEditing = ref(false);
+const showDeleteModal = ref(false);
+const entityToDelete = ref(null);
 
 const initialEntityState = {
   id: "",
@@ -111,14 +166,45 @@ const loadEntities = async () => {
   }
 };
 
-const submitNewEntity = async () => {
+const showToast = (msg, type = "success") => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 4000);
+};
+const openEditModal = (entity) => {
+  isEditing.value = true;
+  entityForm.value = { ...entity };
+  showModal.value = true;
+};
+
+const openCreateModal = () => {
+  isEditing.value = false;
+  entityForm.value = { ...initialEntityState };
+  showModal.value = true;
+};
+
+const saveEntity = async () => {
   try {
     isSaving.value = true;
-    await apiClient.post("/enti", entityForm.value);
+
+    const payload = {
+      ...entityForm.value,
+      id: entityForm.value.id.toUpperCase().trim(),
+    };
+
+    if (isEditing.value) {
+      await apiClient.patch(`/enti/${payload.id}`, {
+        descrizione: payload.descrizione,
+      });
+      showToast("Ente aggiornato con successo!");
+    } else {
+      await apiClient.post("/enti", payload);
+      showToast("Ente creato con successo!");
+    }
+
     showModal.value = false;
-    entityForm.value = { ...initialEntityState };
     await loadEntities();
-    showToast("Ente salvato con successo!");
   } catch (err) {
     showToast("Errore: " + err.message, "error");
   } finally {
@@ -126,11 +212,27 @@ const submitNewEntity = async () => {
   }
 };
 
-const showToast = (msg, type = "success") => {
-  toast.value = { show: true, message: msg, type };
-  setTimeout(() => {
-    toast.value.show = false;
-  }, 4000);
+const confirmDelete = (entity) => {
+  entityToDelete.value = entity;
+  showDeleteModal.value = true;
+};
+
+const deleteEntity = async () => {
+  if (!entityToDelete.value) return;
+
+  try {
+    isSaving.value = true;
+    await apiClient.delete(`/enti/${entityToDelete.value.id}`);
+    showToast("Ente eliminato con successo!");
+    await loadEntities();
+    showDeleteModal.value = false;
+  } catch (err) {
+    const msg = err.response?.data?.error || "Errore durante l'eliminazione";
+    showToast(msg, "error");
+  } finally {
+    isSaving.value = false;
+    entityToDelete.value = null;
+  }
 };
 
 onMounted(loadEntities);
@@ -196,5 +298,47 @@ onMounted(loadEntities);
 }
 .btn-save:disabled {
   background: #ccc;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+.actions-wrapper {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.btn-icon.edit {
+  color: #0067b1;
+}
+.btn-icon.delete {
+  color: #dc3545;
+}
+
+.confirm-modal-content {
+  text-align: center;
+}
+
+.btn-delete-confirm {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+
+  &:disabled {
+    background: #eaa1a8;
+    cursor: not-allowed;
+  }
 }
 </style>
