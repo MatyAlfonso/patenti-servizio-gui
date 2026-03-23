@@ -29,33 +29,32 @@
     </div>
 
     <div class="tab-content">
-      <DataTable
-        :items="activeTab === 'servizio' ? formattedServizio : formattedCivile"
-        :columns="activeTab === 'servizio' ? colsServizio : colsCivile"
-        actionsHeader="Gestione patente"
+      <Table
+        :items="activeTab === 'servizio' ? filteredServizioRaw : filteredCivileRaw"
+        :fields="activeTab === 'servizio' ? colsServizio : colsCivile"
       >
-        <template #cell-stato="{ item }">
-          <span :class="['badge', item.raw.id_stato]">
-            {{ item.raw.stato?.descrizione }}
+        <template #cell[titolare]="{ data }">
+          {{ data.item.persona?.cognome }} {{ data.item.persona?.nome }}
+        </template>
+
+        <template #cell[id_stato]="{ data }">
+          <span :class="['badge', data.item.id_stato]">
+            {{ data.item.stato?.descrizione || data.item.id_stato }}
           </span>
         </template>
 
-        <template #actions="{ item }">
+        <template #cell[actions]="{ data }">
           <div class="action-buttons">
             <button
               class="btn-icon print"
-              @click="
-                activeTab === 'servizio'
-                  ? openStatusModal(item.raw, 'servizio')
-                  : openStatusModal(item.raw, 'civile')
-              "
+              @click="openStatusModal(data.item, activeTab)"
               title="Cambia stato"
             >
               <Icon name="settings" size="24" />
             </button>
           </div>
         </template>
-      </DataTable>
+      </Table>
     </div>
 
     <Modal
@@ -102,7 +101,8 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
-import DataTable from "@/components/DataTable.vue";
+//import DataTable from "@/components/DataTable.vue";
+import Table from "@/components/Table.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
@@ -127,21 +127,22 @@ const statusModal = ref({
 });
 
 const colsServizio = [
-  { key: "numero", label: "Numero" },
+  { key: "numero", label: "Numero", sortable: true },
   { key: "titolare", label: "Titolare" },
-  { key: "ente", label: "Ente" },
-  { key: "rilascio", label: "Data di rilascio" },
-  { key: "scadenza", label: "Data di scadenza" },
-  { key: "stato", label: "Stato" },
+  { key: "id_ente", label: "Ente", sortable: true },
+  { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
+  { key: "id_stato", label: "Stato", sortable: true },
+  { key: "actions", label: "Azioni" },
 ];
 
 const colsCivile = [
-  { key: "numero", label: "Numero" },
+  { key: "numero", label: "Numero", sortable: true },
   { key: "titolare", label: "Titolare" },
-  { key: "categoria", label: "Categoria" },
-  { key: "rilascio", label: "Data di rilascio" },
-  { key: "scadenza", label: "Data di scadenza" },
-  { key: "stato", label: "Stato" },
+  { key: "id_categoria", label: "Cat.", sortable: true },
+  { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
+  { key: "data_scadenza", label: "Scadenza", sortable: true, formatter: formatDate },
+  { key: "id_stato", label: "Stato", sortable: true },
+  { key: "actions", label: "Azioni" },
 ];
 
 const statusOptions = computed(() => {
@@ -171,73 +172,32 @@ const statusOptions = computed(() => {
 const filteredServizioRaw = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
   let result = [...patentiServizio.value];
-
   if (query) {
-    result = result.filter(
-      (p) =>
-        p.persona?.nome?.toLowerCase().includes(query) ||
-        p.persona?.cognome?.toLowerCase().includes(query)
+    result = result.filter((p) =>
+      `${p.persona?.nome} ${p.persona?.cognome}`.toLowerCase().includes(query)
     );
   }
-
   if (statusFilter.value !== "ALL") {
     result = result.filter((p) => p.id_stato === statusFilter.value);
   }
-
-  return result.sort((a, b) => {
-    const dateA = new Date(a.data_rilascio);
-    const dateB = new Date(b.data_rilascio);
-    return sortOrder.value === "ASC" ? dateA - dateB : dateB - dateA;
-  });
+  return result;
 });
 
 const filteredCivileRaw = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
   let result = [...patentiCivile.value];
-
   if (query) {
     result = result.filter(
       (p) =>
-        p.persona?.nome?.toLowerCase().includes(query) ||
-        p.persona?.cognome?.toLowerCase().includes(query) ||
-        p.numero?.toLowerCase().includes(query)
+        p.numero?.toLowerCase().includes(query) ||
+        `${p.persona?.nome} ${p.persona?.cognome}`.toLowerCase().includes(query)
     );
   }
-
   if (statusFilter.value !== "ALL") {
     result = result.filter((p) => p.id_stato === statusFilter.value);
   }
-
-  return result.sort((a, b) => {
-    const dateA = new Date(a.data_scadenza);
-    const dateB = new Date(b.data_scadenza);
-    return sortOrder.value === "ASC" ? dateA - dateB : dateB - dateA;
-  });
+  return result;
 });
-
-const formattedServizio = computed(() =>
-  filteredServizioRaw.value.map((p) => ({
-    id: p.id,
-    titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
-    numero: p.numero,
-    ente: p.id_ente,
-    rilascio: formatDate(p.data_rilascio),
-    scadenza: formatDate(p.patente_civile.data_scadenza),
-    raw: p,
-  }))
-);
-
-const formattedCivile = computed(() =>
-  filteredCivileRaw.value.map((p) => ({
-    id: p.id,
-    titolare: `${p.persona?.cognome} ${p.persona?.nome}`,
-    numero: p.numero,
-    categoria: p.categoria?.id,
-    rilascio: formatDate(p.data_rilascio),
-    scadenza: formatDate(p.data_scadenza),
-    raw: p,
-  }))
-);
 
 const loadData = async () => {
   try {

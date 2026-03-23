@@ -71,23 +71,26 @@
     </Modal>
 
     <div v-if="loading">Caricando...</div>
-    <DataTable
-      v-else
-      :items="filteredPeople"
-      :columns="tableColumns"
-      actionsHeader="Azioni"
-    >
-      <template #actions="{ item }">
+    <Table v-else :items="filteredPeople" :fields="tableColumns" :striped="true">
+      <template #cell[actions]="{ data }">
         <div class="actions-wrapper">
-          <button class="btn-icon edit" @click="openEditModal(item)" title="Modifica">
+          <button
+            class="btn-icon edit"
+            @click="openEditModal(data.item)"
+            title="Modifica"
+          >
             <Icon name="edit" size="24" />
           </button>
-          <button class="btn-icon delete" @click="confirmDelete(item)" title="Elimina">
+          <button
+            class="btn-icon delete"
+            @click="confirmDelete(data.item)"
+            title="Elimina"
+          >
             <Icon name="delete" size="24" />
           </button>
         </div>
       </template>
-    </DataTable>
+    </Table>
 
     <Toast
       :show="toast.show"
@@ -101,7 +104,8 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
-import DataTable from "@/components/DataTable.vue";
+//import DataTable from "@/components/DataTable.vue";
+import Table from "@/components/Table.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
@@ -128,31 +132,25 @@ const initialPersonState = {
 const personForm = ref({ ...initialPersonState });
 
 const tableColumns = [
-  { key: "cognome", label: "Cognome" },
-  { key: "nome", label: "Nome" },
-  { key: "codice_fiscale", label: "Codice fiscale" },
-  { key: "data_nascita", label: "Data di nascita" },
-  { key: "luogo_nascita", label: "Luogo di nascita" },
+  { key: "cognome", label: "Cognome", sortable: true },
+  { key: "nome", label: "Nome", sortable: true },
+  { key: "codice_fiscale", label: "Codice fiscale", sortable: true },
+  { key: "data_nascita", label: "Data di nascita", sortable: true, formatter: formatDate },
+  { key: "luogo_nascita", label: "Luogo di nascita", sortable: true },
+  { key: "actions", label: "Azioni" },
 ];
 
 const toast = ref({ show: false, message: "", type: "success" });
 const filteredPeople = computed(() => {
   const query = searchQuery.value.toLowerCase();
+  if (!query) return people.value;
 
-  let result = people.value;
-  if (query) {
-    result = result.filter(
-      (p) =>
-        p.cognome.toLowerCase().includes(query) ||
-        p.nome.toLowerCase().includes(query) ||
-        p.codice_fiscale.toLowerCase().includes(query)
-    );
-  }
-
-  return result.map((p) => ({
-    ...p,
-    data_nascita: formatDate(p.data_nascita),
-  }));
+  return people.value.filter(
+    (p) =>
+      p.cognome.toLowerCase().includes(query) ||
+      p.nome.toLowerCase().includes(query) ||
+      p.codice_fiscale.toLowerCase().includes(query)
+  );
 });
 
 const openCreateModal = () => {
@@ -163,15 +161,7 @@ const openCreateModal = () => {
 
 const openEditModal = (item) => {
   isEditing.value = true;
-
-  const originalPerson = people.value.find((p) => p.id === item.id);
-
-  if (originalPerson) {
-    personForm.value = { ...originalPerson };
-  } else {
-    personForm.value = { ...item };
-  }
-
+  personForm.value = { ...item };
   showModal.value = true;
 };
 
@@ -338,5 +328,11 @@ onMounted(loadPeople);
   padding: 10px 15px;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.actions-wrapper {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 </style>

@@ -340,7 +340,7 @@
         <div class="form-actions">
           <button @click="showDeleteModal = false" class="btn-cancel">Annulla</button>
           <button @click="executeDelete" class="btn-reject" :disabled="isSaving">
-            Sì, Elimina
+            Sì, elimina
           </button>
         </div>
       </div>
@@ -348,58 +348,76 @@
 
     <div v-if="loading">Caricando...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable
-      :items="filteredAndFormattedRichieste"
-      :columns="columns"
-      actionsHeader="Gestione richiesta"
-    >
-      <template #cell-foto="{ item }">
-        <div class="images-container">
-          <img
-            v-if="item.raw.fototessera"
-            :src="`api/${item.raw.fototessera.path}`"
-            class="thumbnail"
-          />
-          <img
-            v-if="item.raw.fototessera"
-            :src="`api/${item.raw.firma_scansionata.path}`"
-            class="thumbnail"
-          />
-          <Icon v-else name="account_circle" color="#ccc" />
-        </div>
+    <Table v-else :items="filteredRichiesteRaw" :fields="columns">
+      <template #cell[data_richiesta]="{ data }">
+        {{ formatDate(data.item.data_richiesta) }}
       </template>
 
-      <template #cell-stato_richiesta="{ item }">
-        <span :class="['badge', item.raw.id_stato]">
-          {{ item.raw.stato?.descrizione || item.stato_richiesta }}
+      <template #cell[titolare]="{ data }">
+        {{ data.item.persona?.cognome }} {{ data.item.persona?.nome }}
+      </template>
+
+      <template #cell[ente.descrizione]="{ data }">
+        {{ data.item.ente?.descrizione || "-" }}
+      </template>
+
+      <template #cell[tipo.descrizione]="{ data }">
+        {{ data.item.tipo?.descrizione || "-" }}
+      </template>
+
+      <template #cell[id_stato]="{ data }">
+        <span :class="['badge', data.item.id_stato]">
+          {{ data.item.stato?.descrizione || data.item.id_stato }}
         </span>
       </template>
 
-      <template #actions="{ item }">
+      <template #cell[foto]="{ data }">
+        <div class="images-container">
+          <template v-if="data.item.fototessera">
+            <img
+              :src="`api/${data.item.fototessera.path}`"
+              class="thumbnail"
+              title="Foto"
+            />
+            <img
+              :src="`api/${data.item.firma_scansionata?.path}`"
+              class="thumbnail"
+              title="Firma"
+            />
+          </template>
+          <Icon v-else name="account_circle" color="#ccc" size="30" />
+        </div>
+      </template>
+
+      <template #cell[actions]="{ data }">
         <div class="actions-wrapper">
           <button
             class="btn-icon details"
-            @click="viewDetails(item.raw)"
+            @click="viewDetails(data.item)"
             title="Dettagli"
           >
             <Icon name="visibility" size="24" />
           </button>
 
-          <button
-            v-if="item.raw.id_stato === 'IN_PREPARAZIONE'"
-            class="btn-icon edit"
-            @click="openEditModal(item)"
-            title="Modifica"
-          >
-            <Icon name="edit" size="24" />
-          </button>
-
-          <button v-if="item.raw.id_stato === 'IN_PREPARAZIONE'" class="btn-icon delete" @click="confirmDelete(item)" title="Elimina">
-            <Icon name="delete" size="24" />
-          </button>
+          <template v-if="data.item.id_stato === 'IN_PREPARAZIONE'">
+            <button
+              class="btn-icon edit"
+              @click="openEditModal(data.item)"
+              title="Modifica"
+            >
+              <Icon name="edit" size="24" />
+            </button>
+            <button
+              class="btn-icon delete"
+              @click="confirmDelete(data.item)"
+              title="Elimina"
+            >
+              <Icon name="delete" size="24" />
+            </button>
+          </template>
         </div>
       </template>
-    </DataTable>
+    </Table>
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -412,7 +430,8 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
-import DataTable from "@/components/DataTable.vue";
+//import DataTable from "@/components/DataTable.vue";
+import Table from "@/components/Table.vue";
 import Modal from "@/components/Modal.vue";
 import Toast from "@/components/Toast.vue";
 import Icon from "@/components/Icon.vue";
@@ -488,13 +507,13 @@ const handleFile = (e, type) => {
 const files = { foto: null, firma: null };
 
 const columns = [
-  { key: "data", label: "Data" },
-  { key: "cognome", label: "Cognome" },
-  { key: "nome", label: "Nome" },
-  { key: "ente", label: "Ente" },
-  { key: "tipo_richiesta", label: "Tipo" },
-  { key: "stato_richiesta", label: "Stato" },
+  { key: "data_richiesta", label: "Data", sortable: true },
+  { key: "titolare", label: "Richiedente", sortable: true },
+  { key: "ente.descrizione", label: "Ente", sortable: true },
+  { key: "tipo.descrizione", label: "Tipo" },
+  { key: "id_stato", label: "Stato", sortable: true },
   { key: "foto", label: "Allegati" },
+  { key: "actions", label: "Azioni" },
 ];
 
 const statusOptions = [
@@ -503,22 +522,9 @@ const statusOptions = [
   { value: "RESPINTA", label: "Respinta" },
 ];
 
-const filteredAndFormattedRichieste = computed(() => {
-  const query = searchQuery.value.toLowerCase();
-
-  let result = richieste.value.map((r) => ({
-    id: r.id,
-    data_raw: new Date(r.data_richiesta),
-    data: new Date(r.data_richiesta).toLocaleDateString(),
-    cognome: r.persona?.cognome || "",
-    nome: r.persona?.nome || "",
-    codice_fiscale: r.persona?.codice_fiscale || "",
-    ente: r.ente?.descrizione || "",
-    tipo_richiesta: r.tipo?.descrizione || "",
-    stato_richiesta: r.stato?.descrizione || "",
-    id_stato: r.id_stato,
-    raw: r,
-  }));
+const filteredRichiesteRaw = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+  let result = [...richieste.value];
 
   if (statusFilter.value !== "ALL") {
     result = result.filter((r) => r.id_stato === statusFilter.value);
@@ -527,14 +533,16 @@ const filteredAndFormattedRichieste = computed(() => {
   if (query) {
     result = result.filter(
       (r) =>
-        r.cognome.toLowerCase().includes(query) ||
-        r.nome.toLowerCase().includes(query) ||
-        r.codice_fiscale.toLowerCase().includes(query)
+        r.persona?.cognome?.toLowerCase().includes(query) ||
+        r.persona?.nome?.toLowerCase().includes(query) ||
+        r.persona?.codice_fiscale?.toLowerCase().includes(query)
     );
   }
 
   return result.sort((a, b) => {
-    return sortOrder.value === "ASC" ? a.data_raw - b.data_raw : b.data_raw - a.data_raw;
+    const dateA = new Date(a.data_richiesta);
+    const dateB = new Date(b.data_richiesta);
+    return sortOrder.value === "ASC" ? dateA - dateB : dateB - dateA;
   });
 });
 
@@ -575,7 +583,7 @@ const showToast = (msg, type = "success") => {
 
 const openEditModal = (item) => {
   isEditing.value = true;
-  const r = item.raw;
+  const r = item;
 
   form.value = {
     ...initialFormState,
@@ -923,13 +931,17 @@ legend {
   font-weight: bold;
 }
 
+.images-container {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
 .thumbnail {
-  width: 35px;
-  height: 45px;
+  width: 30px;
+  height: 38px;
   object-fit: cover;
-  border-radius: 4px;
-  display: block;
-  margin: 0 auto;
+  border: 1px solid #ddd;
+  border-radius: 2px;
 }
 
 .badge {
@@ -1036,10 +1048,6 @@ legend {
 .detail-info p {
   margin: 5px 0;
   font-size: 0.9rem;
-}
-
-.images-container {
-  display: flex;
 }
 
 .toolbar {

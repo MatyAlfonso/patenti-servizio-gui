@@ -81,22 +81,26 @@
 
     <div v-if="loading">Caricando enti...</div>
     <div v-else-if="error">{{ error }}</div>
-    <DataTable
-      :items="filteredEntities"
-      :columns="tableColumns"
-      actionsHeader="Azioni"
-    >
-      <template #actions="{ item }">
+    <Table :items="filteredEntities" :fields="tableColumns" :striped="true">
+      <template #cell[actions]="{ data }">
         <div class="actions-wrapper">
-          <button class="btn-icon edit" @click="openEditModal(item)" title="Modifica">
+          <button
+            class="btn-icon edit"
+            @click="openEditModal(data.item)"
+            title="Modifica"
+          >
             <Icon name="edit" size="24" />
           </button>
-          <button class="btn-icon delete" @click="confirmDelete(item)" title="Elimina">
+          <button
+            class="btn-icon delete"
+            @click="confirmDelete(data.item)"
+            title="Elimina"
+          >
             <Icon name="delete" size="24" />
           </button>
         </div>
       </template>
-    </DataTable>
+    </Table>
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -109,7 +113,8 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
-import DataTable from "@/components/DataTable.vue";
+//import DataTable from "@/components/DataTable.vue";
+import Table from "@/components/Table.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
@@ -133,8 +138,9 @@ const initialEntityState = {
 const entityForm = ref({ ...initialEntityState });
 
 const tableColumns = [
-  { key: "id", label: "Codice" },
-  { key: "descrizione", label: "Descrizione" },
+  { key: "id", label: "Codice", sortable: true },
+  { key: "descrizione", label: "Descrizione", sortable: true },
+  { key: "actions", label: "Azioni" }
 ];
 
 const toast = ref({
