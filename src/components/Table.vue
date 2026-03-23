@@ -1,6 +1,6 @@
 <template>
-  <div class="table-responsive">
-    <table class="table bordered valigned" :class="{ 'tbl-striped': striped }">
+  <div class="table-container">
+    <table class="generic-table" :class="{ 'tbl-striped': striped }">
       <thead class="table-light">
         <tr>
           <th v-for="field in fields" :key="field.key" :class="[field.hclass, 'sticky']">
@@ -44,7 +44,7 @@
             <td
               v-for="field in fields"
               :key="field.key"
-              :style="{ 'text-align': field.align || 'inherit' }"
+              :style="{ 'text-align': field.align || 'center' }"
               :data-label="field.label == null ? field.key : field.label"
             >
               <input
@@ -248,6 +248,30 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.generic-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.generic-table th,
+.generic-table td {
+  border: 1px solid #ddd;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.generic-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+  color: #333;
+}
+
 .sort-icon {
   color: var(--bs-success);
 }
@@ -279,7 +303,7 @@ table {
   .field-cell {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
 
     &.col-sortable {
       cursor: pointer;
