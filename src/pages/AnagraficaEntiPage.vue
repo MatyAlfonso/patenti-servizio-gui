@@ -113,7 +113,6 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { apiClient } from "@/services/api";
-//import DataTable from "@/components/DataTable.vue";
 import Table from "@/components/Table.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
