@@ -46,6 +46,7 @@
                   @change="(e) => handleFile(e, 'foto')"
                   accept="image/*"
                   class="fileInput"
+                  required
                 />
                 <img
                   v-if="previews.foto"
@@ -62,6 +63,7 @@
                   @change="(e) => handleFile(e, 'firma')"
                   accept="image/*"
                   class="fileInput"
+                  required
                 />
                 <img
                   v-if="previews.firma"
@@ -135,10 +137,6 @@
           <div class="form-group-row">
             <label>Residenza</label>
             <input v-model="form.residenza_persona" type="text" required />
-          </div>
-          <div class="form-group-row">
-            <label>Direzione / Servizio di appartenenza</label>
-            <input v-model="form.direzione_servizio" type="text" required />
           </div>
         </fieldset>
 
@@ -495,9 +493,8 @@ const personForm = ref({
 
 const initialFormState = {
   id_persona: "",
-  id_ente: "",
+  id_ente: "PCR",
   residenza_persona: "",
-  direzione_servizio: "",
   patente_civile_numero: "",
   patente_civile_categorie: "",
   patente_civile_autorita: "",
