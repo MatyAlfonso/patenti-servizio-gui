@@ -307,7 +307,7 @@
           <button
             v-if="selectedRequest.id_stato === 'IN_PREPARAZIONE'"
             class="btn-reject"
-            @click="rejectRequest(selectedRequest)"
+            @click="confirmReject(selectedRequest)"
           >
             <Icon name="block" size="18" /> Respingi
           </button>
@@ -334,13 +334,37 @@
       <div class="confirm-modal-content">
         <p>
           Sei sicuro di voler eliminare la richiesta di
-          <strong>{{ requestToDelete?.persona?.cognome + " " + requestToDelete?.persona?.nome }}</strong
+          <strong>{{
+            requestToDelete?.persona?.cognome + " " + requestToDelete?.persona?.nome
+          }}</strong
           >?
         </p>
         <div class="form-actions">
           <button @click="showDeleteModal = false" class="btn-cancel">Annulla</button>
           <button @click="executeDelete" class="btn-reject" :disabled="isSaving">
             Sì, elimina
+          </button>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      v-if="showRejectModal"
+      title="Conferma respinta"
+      @close="showRejectModal = false"
+    >
+      <div class="confirm-modal-content">
+        <p>
+          Sei sicuro di voler respingere la richiesta di
+          <strong>{{
+            requestToReject?.persona?.cognome + " " + requestToReject?.persona?.nome
+          }}</strong
+          >?
+        </p>
+        <div class="form-actions">
+          <button @click="showRejectModal = false" class="btn-cancel">Annulla</button>
+          <button @click="executeReject" class="btn-reject" :disabled="isSaving">
+            Sì, respingi
           </button>
         </div>
       </div>
@@ -451,7 +475,9 @@ const statusFilter = ref("ALL");
 const sortOrder = ref("DESC");
 const isEditing = ref(false);
 const showDeleteModal = ref(false);
+const showRejectModal = ref(false);
 const requestToDelete = ref(null);
+const requestToReject = ref(null);
 
 const richieste = ref([]);
 const people = ref([]);
@@ -637,7 +663,7 @@ const submitRequest = async () => {
 };
 
 const confirmDelete = (item) => {
-  requestToDelete.value = item.raw;
+  requestToDelete.value = item;
   showDeleteModal.value = true;
 };
 
@@ -727,24 +753,28 @@ const printLicense = async (item) => {
     await loadData();
   } catch (err) {
     if (url) window.URL.revokeObjectURL(url);
-    console.error("Errore durante el proceso:", err);
+    console.error("Errore durante il proceso:", err);
     const msg =
       err.response?.data?.error || "Errore durante la generazione del documento";
     showToast(msg, "error");
   }
 };
 
-const rejectRequest = async (item) => {
-  if (!confirm("Sei sicuro di voler respingere questa richiesta?")) return;
+const confirmReject = (item) => {
+  requestToReject.value = item;
+  showRejectModal.value = true;
+};
 
+const executeReject = async () => {
   try {
-    await apiClient.patch(`/richieste/${item.id}`, {
+    await apiClient.patch(`/richieste/${requestToReject.value.id}`, {
       id_stato: "RESPINTA",
     });
 
     showToast("Richiesta respinta correctamente");
     showDetailModal.value = false;
     await loadData();
+    showRejectModal.value = false;
   } catch (err) {
     showToast("Errore durante il rifiuto: " + err.message, "error");
   }

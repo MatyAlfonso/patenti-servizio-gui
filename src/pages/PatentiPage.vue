@@ -137,7 +137,7 @@ const colsServizio = [
 const colsCivile = [
   { key: "numero", label: "Numero", sortable: true },
   { key: "titolare", label: "Titolare" },
-  { key: "id_categoria", label: "Cat.", sortable: true },
+  { key: "id_categoria", label: "Categoria", sortable: true },
   { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
   { key: "data_scadenza", label: "Scadenza", sortable: true, formatter: formatDate },
   { key: "id_stato", label: "Stato", sortable: true },
