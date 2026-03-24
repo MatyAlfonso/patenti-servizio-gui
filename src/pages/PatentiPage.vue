@@ -37,6 +37,15 @@
           {{ data.item.persona?.cognome }} {{ data.item.persona?.nome }}
         </template>
 
+        <template #cell[data_scadenza]="{ data }">
+          <template v-if="activeTab === 'servizio'">
+            {{ formatDate(data.item.patente_civile?.data_scadenza) || "-" }}
+          </template>
+          <template v-else>
+            {{ formatDate(data.item.data_scadenza) || "-" }}
+          </template>
+        </template>
+
         <template #cell[id_stato]="{ data }">
           <span :class="['badge', data.item.id_stato]">
             {{ data.item.stato?.descrizione || data.item.id_stato }}
@@ -129,7 +138,9 @@ const colsServizio = [
   { key: "numero", label: "Numero", sortable: true },
   { key: "titolare", label: "Titolare" },
   { key: "id_ente", label: "Ente", sortable: true },
+  { key: "id_categoria", label: "Categoria", sortable: true },
   { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
+  { key: "data_scadenza", label: "Scadenza", sortable: true, formatter: formatDate },
   { key: "id_stato", label: "Stato", sortable: true },
   { key: "actions", label: "Azioni" },
 ];
@@ -137,7 +148,6 @@ const colsServizio = [
 const colsCivile = [
   { key: "numero", label: "Numero", sortable: true },
   { key: "titolare", label: "Titolare" },
-  { key: "id_categoria", label: "Categoria", sortable: true },
   { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
   { key: "data_scadenza", label: "Scadenza", sortable: true, formatter: formatDate },
   { key: "id_stato", label: "Stato", sortable: true },
