@@ -11,14 +11,14 @@
       </option>
     </select>
 
-    <select
+    <!-- <select
       :value="sortOrder"
       @change="$emit('update:sortOrder', $event.target.value)"
       class="filter-select"
     >
       <option value="DESC">Più recenti</option>
       <option value="ASC">Più antichi</option>
-    </select>
+    </select> -->
   </div>
 </template>
 

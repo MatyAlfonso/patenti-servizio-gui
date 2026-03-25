@@ -73,7 +73,8 @@
     >
       <div class="status-change-form">
         <p>
-          Stai cambiando lo stato della patente di
+          Stai cambiando lo stato della patente
+          {{ activeTab === "servizio" ? "di Servizio" : "Civile" }} di
           <strong>{{ statusModal.targetName }}</strong>
         </p>
         <div class="form-group">
@@ -136,7 +137,7 @@ const statusModal = ref({
 
 const colsServizio = [
   { key: "numero", label: "Numero", sortable: true },
-  { key: "titolare", label: "Titolare" },
+  { key: "titolare", label: "Titolare", sortable: true },
   { key: "id_ente", label: "Ente", sortable: true },
   { key: "id_categoria", label: "Categoria", sortable: true },
   { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
@@ -147,7 +148,7 @@ const colsServizio = [
 
 const colsCivile = [
   { key: "numero", label: "Numero", sortable: true },
-  { key: "titolare", label: "Titolare" },
+  { key: "titolare", label: "Titolare", sortable: true },
   { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
   { key: "data_scadenza", label: "Scadenza", sortable: true, formatter: formatDate },
   { key: "id_stato", label: "Stato", sortable: true },

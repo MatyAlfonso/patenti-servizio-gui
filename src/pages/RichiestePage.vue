@@ -407,7 +407,7 @@
               title="Firma"
             />
           </template>
-          <Icon v-else name="account_circle" color="#ccc" size="30" />
+          <Icon v-else name="photo" color="#ccc" size="30" />
         </div>
       </template>
 
