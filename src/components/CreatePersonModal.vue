@@ -15,7 +15,12 @@
       </div>
       <div class="form-group">
         <label>Codice fiscale</label>
-        <input v-model="personForm.codice_fiscale" type="text" required />
+        <input
+          v-model="personForm.codice_fiscale"
+          type="text"
+          @input="personForm.codice_fiscale = personForm.codice_fiscale.toUpperCase()"
+          required
+        />
       </div>
       <div class="form-group">
         <label>Data di nascita</label>
@@ -39,6 +44,13 @@
         </button>
       </div>
     </form>
+
+    <Toast
+      :show="toast.show"
+      :message="toast.message"
+      :type="toast.type"
+      @close="toast.show = false"
+    />
   </Modal>
 </template>
 
@@ -46,11 +58,14 @@
 import { ref } from "vue";
 import { apiClient } from "@/services/api";
 import Modal from "@/components/Modal.vue";
+import Toast from "@/components/Toast.vue";
 
 defineProps({ modelValue: Boolean });
 const emit = defineEmits(["update:modelValue", "person-created"]);
 
 const loading = ref(false);
+const toast = ref({ show: false, message: "", type: "error" });
+
 const personForm = ref({
   cognome: "",
   nome: "",
@@ -59,12 +74,27 @@ const personForm = ref({
   luogo_nascita: "",
 });
 
+const showToast = (msg, type = "error") => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 3000);
+};
+
 const submitNewPerson = async () => {
   try {
     loading.value = true;
     const response = await apiClient.post("/persone", personForm.value);
-    emit("person-created", response.data.id || response.id);
+
+    const newId = response.id || (response.data && response.data.id);
+
+    if (newId) {
+      emit("person-created", newId);
+    } else {
+      console.error("ID non trovato nella risposta:", response);
+    }
     emit("update:modelValue", false);
+
     personForm.value = {
       cognome: "",
       nome: "",
@@ -73,7 +103,12 @@ const submitNewPerson = async () => {
       luogo_nascita: "",
     };
   } catch (err) {
-    alert("Errore nella creazione della persona");
+    const msg =
+      err.message === "Validation error"
+        ? "Errore: Persona già esistente o dati non validi"
+        : err.message || "Errore nella creazione della persona";
+
+    showToast(msg, "error");
   } finally {
     loading.value = false;
   }
@@ -91,6 +126,16 @@ const submitNewPerson = async () => {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+.form-group label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #555;
+}
+.form-group input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .form-actions {
