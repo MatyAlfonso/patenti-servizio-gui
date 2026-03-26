@@ -52,6 +52,12 @@
           </span>
         </template>
 
+        <template #cell[categoria]="{ data }">
+          <span>
+            {{ data.item.categoria.descrizione.split("CAT. ")[1] }}
+          </span>
+        </template>
+
         <template #cell[actions]="{ data }">
           <div class="action-buttons">
             <button
@@ -137,18 +143,46 @@ const statusModal = ref({
 
 const colsServizio = [
   { key: "numero", label: "Numero", sortable: true },
-  { key: "titolare", label: "Titolare", sortable: true },
+  {
+    key: "titolare",
+    label: "Titolare",
+    sortable: true,
+    sort: (fa, fb, a, b) => {
+      const nameA = `${a.persona?.cognome} ${a.persona?.nome}`.toLowerCase();
+      const nameB = `${b.persona?.cognome} ${b.persona?.nome}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    },
+  },
   { key: "id_ente", label: "Ente", sortable: true },
   { key: "id_categoria", label: "Categoria", sortable: true },
   { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
-  { key: "data_scadenza", label: "Scadenza", sortable: true, formatter: formatDate },
+  {
+    key: "data_scadenza",
+    label: "Scadenza",
+    sortable: true,
+    sort: (fa, fb, a, b) => {
+      const dateA = a.patente_civile?.data_scadenza || "";
+      const dateB = b.patente_civile?.data_scadenza || "";
+      return dateA.localeCompare(dateB);
+    },
+  },
   { key: "id_stato", label: "Stato", sortable: true },
-  { key: "actions", label: "Azioni" },
+  //{ key: "actions", label: "Azioni" }, decidere se serve una colonna per gestire patenti di servizio o no
 ];
 
 const colsCivile = [
   { key: "numero", label: "Numero", sortable: true },
-  { key: "titolare", label: "Titolare", sortable: true },
+  {
+    key: "titolare",
+    label: "Titolare",
+    sortable: true,
+    sort: (fa, fb, a, b) => {
+      const nameA = `${a.persona?.cognome} ${a.persona?.nome}`.toLowerCase();
+      const nameB = `${b.persona?.cognome} ${b.persona?.nome}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    },
+  },
+  { key: "categoria", label: "Categoria", sortable: true },
   { key: "data_rilascio", label: "Rilascio", sortable: true, formatter: formatDate },
   { key: "data_scadenza", label: "Scadenza", sortable: true, formatter: formatDate },
   { key: "id_stato", label: "Stato", sortable: true },

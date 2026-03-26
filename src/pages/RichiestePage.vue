@@ -528,12 +528,52 @@ const handleFile = (e, type) => {
 
 const files = { foto: null, firma: null };
 
+const createSort = (path, isDate = false) => {
+  return (fa, fb, a, b) => {
+    const getValue = (obj) =>
+      path.split(".").reduce((acc, part) => acc?.[part], obj) || "";
+
+    const valA = getValue(a);
+    const valB = getValue(b);
+
+    if (isDate) {
+      return new Date(valA) - new Date(valB);
+    }
+
+    return String(valA).localeCompare(String(valB), undefined, { sensitivity: "base" });
+  };
+};
+
 const columns = [
   { key: "data_richiesta", label: "Data", sortable: true },
-  { key: "titolare", label: "Richiedente", sortable: true },
-  { key: "ente.descrizione", label: "Ente", sortable: true },
-  { key: "tipo.descrizione", label: "Tipo" },
-  { key: "id_stato", label: "Stato", sortable: true },
+  {
+    key: "titolare",
+    label: "Richiedente",
+    sortable: true,
+    sort: (fa, fb, a, b) => {
+      const nameA = `${a.persona?.cognome} ${a.persona?.nome}`.toLowerCase();
+      const nameB = `${b.persona?.cognome} ${b.persona?.nome}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    },
+  },
+  {
+    key: "ente.descrizione",
+    label: "Ente",
+    sortable: true,
+    sort: createSort("ente.descrizione"),
+  },
+  {
+    key: "tipo.descrizione",
+    label: "Tipo",
+    sortable: true,
+    sort: createSort("tipo.descrizione"),
+  },
+  {
+    key: "id_stato",
+    label: "Stato",
+    sortable: true,
+    sort: createSort("stato.descrizione"),
+  },
   { key: "foto", label: "Allegati" },
   { key: "actions", label: "Azioni" },
 ];
