@@ -74,11 +74,11 @@
           <label>Cognome e nome</label>
           <select v-model="form.id_persona" @change="checkNewPerson" required>
             <option disabled value="">Seleziona...</option>
-            <option v-for="p in people" :key="p.id" :value="p.id">
-              {{ p.cognome }} {{ p.nome }}
-            </option>
             <option value="NEW_PERSON" class="option-add">
               + Aggiungi nuova persona...
+            </option>
+            <option v-for="p in sortedPeople" :key="p.id" :value="p.id">
+              {{ p.cognome }} {{ p.nome }}
             </option>
           </select>
         </div>
@@ -212,6 +212,16 @@ const form = ref({ ...initialFormState });
 
 const selectedPerson = computed(() => {
   return props.people.find((p) => p.id === form.value.id_persona) || null;
+});
+
+const sortedPeople = computed(() => {
+  if (!props.people) return [];
+
+  return [...props.people].sort((a, b) => {
+    const nameA = `${a.cognome} ${a.nome}`.toLowerCase();
+    const nameB = `${b.cognome} ${b.nome}`.toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 });
 
 const checkNewPerson = (event) => {
@@ -393,6 +403,15 @@ watch(
   justify-content: flex-end;
   gap: 10px;
   margin-top: 10px;
+}
+
+.option-add {
+  background-color: #f0f7ff;
+  color: #0067b1;
+  font-weight: bold;
+  &:hover {
+    background-color: #e0efff;
+  }
 }
 
 .btn-cancel {
