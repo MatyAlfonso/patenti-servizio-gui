@@ -24,160 +24,36 @@
       :people="people"
       :categories="categories"
       @saved="handleSaved"
-      @refresh-people="loadPeople"
+      @refresh-people="loadData"
+    />
+
+    <RequestDetailModal
+      v-model="showDetailModal"
+      :request="selectedRequest"
+      @approve="printLicense"
+      @reject="confirmReject"
     />
 
     <Modal
-      v-if="showDetailModal"
-      :title="'Dettaglio richiesta'"
-      @close="showDetailModal = false"
-    >
-      <div class="detail-container" v-if="selectedRequest">
-        <div class="detail-grid">
-          <div class="detail-images">
-            <div class="image-box">
-              <label>Fototessera</label>
-              <img :src="`api/${selectedRequest.fototessera?.path}`" class="full-img" />
-            </div>
-            <div class="image-box">
-              <label>Firma autografa</label>
-              <img
-                :src="`api/${selectedRequest.firma_scansionata?.path}`"
-                class="full-img signature"
-              />
-            </div>
-          </div>
-
-          <div class="detail-info">
-            <section>
-              <h3>Dati personali</h3>
-              <p>
-                <strong>Cognome e nome:</strong>
-                {{
-                  selectedRequest.persona?.cognome + " " + selectedRequest?.persona?.nome
-                }}
-              </p>
-              <p>
-                <strong>Codice fiscale:</strong>
-                {{ selectedRequest.persona?.codice_fiscale }}
-              </p>
-              <p>
-                <strong>Data di nascita:</strong>
-                {{ formatDate(selectedRequest.persona?.data_nascita) }}
-              </p>
-              <p>
-                <strong>Luogo di nascita:</strong>
-                {{ selectedRequest.persona?.luogo_nascita }}
-              </p>
-              <p><strong>Residenza:</strong> {{ selectedRequest.residenza_persona }}</p>
-            </section>
-
-            <section>
-              <h3>Patente civile</h3>
-              <p>
-                <strong>Numero:</strong>
-                {{ selectedRequest.persona?.patente_civile[0].numero }}
-              </p>
-              <p>
-                <strong>Categoria patente civile:</strong>
-                {{ selectedRequest.persona?.patente_civile[0].id_categoria }}
-              </p>
-              <p>
-                <strong>Rilasciata da:</strong>
-                {{ selectedRequest.persona?.patente_civile[0].autorita }}
-              </p>
-              <p>
-                <strong>Data del rilascio:</strong>
-                {{ formatDate(selectedRequest.persona?.patente_civile[0].data_rilascio) }}
-              </p>
-              <p>
-                <strong>Data di scadenza:</strong>
-                {{ formatDate(selectedRequest.persona?.patente_civile[0].data_scadenza) }}
-              </p>
-            </section>
-
-            <section>
-              <h3>Richiesta</h3>
-              <p><strong>Ente:</strong> {{ selectedRequest.ente?.descrizione }}</p>
-              <p>
-                <strong>Stato: </strong>
-                <span :class="['badge', selectedRequest.id_stato]">
-                  {{ selectedRequest.stato?.descrizione }}
-                </span>
-              </p>
-            </section>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button
-            v-if="selectedRequest.id_stato === 'IN_PREPARAZIONE'"
-            class="btn-reject"
-            @click="confirmReject(selectedRequest)"
-          >
-            <Icon name="block" size="18" /> Respingi
-          </button>
-
-          <button
-            v-if="selectedRequest.id_stato === 'IN_PREPARAZIONE'"
-            class="btn-save"
-            @click="
-              printLicense(selectedRequest);
-              showDetailModal = false;
-            "
-          >
-            <Icon name="print" size="18" /> Approva e stampa
-          </button>
-        </div>
-      </div>
-    </Modal>
-
-    <Modal
-      v-if="showDeleteModal"
-      title="Conferma eliminazione"
-      @close="showDeleteModal = false"
+      v-if="confirmAction.show"
+      :title="confirmAction.title"
+      @close="confirmAction.show = false"
     >
       <div class="confirm-modal-content">
-        <p>
-          Sei sicuro di voler eliminare la richiesta di
-          <strong>{{
-            requestToDelete?.persona?.cognome + " " + requestToDelete?.persona?.nome
-          }}</strong
-          >?
-        </p>
+        <p>{{ confirmAction.message }}</p>
         <div class="form-actions">
-          <button @click="showDeleteModal = false" class="btn-cancel">Annulla</button>
-          <button @click="executeDelete" class="btn-reject" :disabled="isSaving">
-            Sì, elimina
-          </button>
-        </div>
-      </div>
-    </Modal>
-
-    <Modal
-      v-if="showRejectModal"
-      title="Conferma respinta"
-      @close="showRejectModal = false"
-    >
-      <div class="confirm-modal-content">
-        <p>
-          Sei sicuro di voler respingere la richiesta di
-          <strong>{{
-            requestToReject?.persona?.cognome + " " + requestToReject?.persona?.nome
-          }}</strong
-          >?
-        </p>
-        <div class="form-actions">
-          <button @click="showRejectModal = false" class="btn-cancel">Annulla</button>
-          <button @click="executeReject" class="btn-reject" :disabled="isSaving">
-            Sì, respingi
+          <button @click="confirmAction.show = false" class="btn-cancel">Annulla</button>
+          <button @click="confirmAction.callback" class="btn-reject" :disabled="isSaving">
+            Conferma
           </button>
         </div>
       </div>
     </Modal>
 
     <div v-if="loading">Caricando...</div>
+
     <div v-else-if="error">{{ error }}</div>
+
     <Table v-else :items="filteredRichiesteRaw" :fields="columns">
       <template #cell[data_richiesta]="{ data }">
         {{ formatDate(data.item.data_richiesta) }}
@@ -248,6 +124,7 @@
         </div>
       </template>
     </Table>
+
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -267,6 +144,7 @@ import Icon from "@/components/Icon.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import Filter from "@/components/Filter.vue";
 import RequestFormModal from "@/components/RequestFormModal.vue";
+import RequestDetailModal from "@/components/RequestDetailModal.vue";
 import { formatDate } from "@/utils/formatters";
 
 const showModal = ref(false);
@@ -278,22 +156,13 @@ const error = ref(null);
 const searchQuery = ref("");
 const statusFilter = ref("ALL");
 const sortOrder = ref("DESC");
-const showDeleteModal = ref(false);
-const showRejectModal = ref(false);
-const requestToDelete = ref(null);
-const requestToReject = ref(null);
-
+const confirmAction = ref({ show: false, title: "", message: "", callback: null });
 const richieste = ref([]);
 const people = ref([]);
 const entities = ref([]);
 const categories = ref([]);
 const requestTypes = ref([]);
-
-const toast = ref({
-  show: false,
-  message: "",
-  type: "success",
-});
+const toast = ref({ show: false, message: "", type: "success" });
 
 const createSort = (path, isDate = false) => {
   return (fa, fb, a, b) => {
@@ -403,6 +272,11 @@ const loadData = async () => {
   }
 };
 
+const openCreateModal = () => {
+  selectedRequest.value = null;
+  showModal.value = true;
+};
+
 const handleSaved = async () => {
   await loadData();
   showToast(
@@ -412,43 +286,8 @@ const handleSaved = async () => {
   );
 };
 
-const showToast = (msg, type = "success") => {
-  toast.value = { show: true, message: msg, type };
-  setTimeout(() => {
-    toast.value.show = false;
-  }, 4000);
-};
-
-const openEditModal = (item) => {
-  selectedRequest.value = item;
-  showModal.value = true;
-};
-
-const openCreateModal = () => {
-  selectedRequest.value = null;
-  showModal.value = true;
-};
-
-const confirmDelete = (item) => {
-  requestToDelete.value = item;
-  showDeleteModal.value = true;
-};
-
-const executeDelete = async () => {
-  try {
-    isSaving.value = true;
-    await apiClient.delete(`/richieste/${requestToDelete.value.id}`);
-    showToast("Richiesta eliminata");
-    await loadData();
-    showDeleteModal.value = false;
-  } catch (err) {
-    showToast(err.response?.data?.error || "Errore", "error");
-  } finally {
-    isSaving.value = false;
-  }
-};
-
 const printLicense = async (item) => {
+  showDetailModal.value = false;
   let url = null;
   try {
     await apiClient.post(`/richieste/${item.id}`);
@@ -490,28 +329,64 @@ const printLicense = async (item) => {
 };
 
 const confirmReject = (item) => {
-  requestToReject.value = item;
-  showRejectModal.value = true;
+  confirmAction.value = {
+    show: true,
+    title: "Conferma respinta",
+    message: `Vuoi respingere la richiesta di ${item.persona?.cognome} ${item.persona?.nome}?`,
+    callback: () => executeReject(item.id),
+  };
 };
 
-const executeReject = async () => {
+const executeReject = async (id) => {
   try {
-    await apiClient.patch(`/richieste/${requestToReject.value.id}`, {
-      id_stato: "RESPINTA",
-    });
-
-    showToast("Richiesta respinta correctamente");
+    await apiClient.patch(`/richieste/${id}`, { id_stato: "RESPINTA" });
+    showToast("Richiesta respinta");
     showDetailModal.value = false;
+    confirmAction.value.show = false;
     await loadData();
-    showRejectModal.value = false;
   } catch (err) {
-    showToast("Errore durante il rifiuto: " + err.message, "error");
+    showToast("Errore", "error");
   }
+};
+
+const confirmDelete = (item) => {
+  confirmAction.value = {
+    show: true,
+    title: "Conferma eliminazione",
+    message: `Sei sicuro di voler eliminare la richiesta di ${item.persona?.cognome}?`,
+    callback: () => executeDelete(item.id),
+  };
+};
+
+const executeDelete = async (id) => {
+  try {
+    isSaving.value = true;
+    await apiClient.delete(`/richieste/${id}`);
+    showToast("Richiesta eliminata");
+    await loadData();
+    confirmAction.value.show = false;
+  } catch (err) {
+    showToast("Errore nell'eliminazione", "error");
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+const openEditModal = (item) => {
+  selectedRequest.value = item;
+  showModal.value = true;
 };
 
 const viewDetails = (item) => {
   selectedRequest.value = item;
   showDetailModal.value = true;
+};
+
+const showToast = (msg, type = "success") => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 4000);
 };
 
 onMounted(loadData);
@@ -659,65 +534,6 @@ legend {
 }
 .btn-icon.delete {
   color: #dc3545;
-}
-
-.detail-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 30px;
-}
-
-.detail-images {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.image-box {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.image-box label {
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #666;
-}
-
-.full-img {
-  width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #f9f9f9;
-}
-
-.full-img.signature {
-  height: 80px;
-  object-fit: contain;
-}
-
-.detail-info section {
-  margin-bottom: 15px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
-.detail-info h3 {
-  margin: 0 0 10px 0;
-  font-size: 1rem;
-  color: #0067b1;
-}
-
-.detail-info p {
-  margin: 5px 0;
-  font-size: 0.9rem;
 }
 
 .toolbar {
