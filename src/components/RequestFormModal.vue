@@ -121,42 +121,10 @@
         </div>
       </fieldset>
 
-      <Modal
-        v-if="showPersonModal"
-        title="Anagrafica nuova persona"
-        @close="showPersonModal = false"
-      >
-        <form @submit.prevent="submitNewPerson" class="grid-form">
-          <div class="form-group">
-            <label>Cognome</label>
-            <input v-model="personForm.cognome" type="text" required />
-          </div>
-          <div class="form-group">
-            <label>Nome</label>
-            <input v-model="personForm.nome" type="text" required />
-          </div>
-          <div class="form-group">
-            <label>Codice fiscale</label>
-            <input v-model="personForm.codice_fiscale" type="text" required />
-          </div>
-          <div class="form-group">
-            <label>Data di nascita</label>
-            <input v-model="personForm.data_nascita" type="date" required />
-          </div>
-          <div class="form-group">
-            <label>Luogo di nascita</label>
-            <input v-model="personForm.luogo_nascita" type="text" required />
-          </div>
-          <div class="form-actions">
-            <button type="button" @click="showPersonModal = false" class="btn-cancel">
-              Annulla
-            </button>
-            <button type="submit" class="btn-save" :disabled="isSavingPerson">
-              Salva persona
-            </button>
-          </div>
-        </form>
-      </Modal>
+      <CreatePersonModal
+        v-model="showPersonModal"
+        @person-created="handlePersonCreated"
+      />
 
       <fieldset>
         <legend>DATI PATENTE CIVILE POSSEDUTA</legend>
@@ -210,6 +178,7 @@ import { ref, computed, watch } from "vue";
 import { apiClient } from "@/services/api";
 import { formatDate } from "@/utils/formatters";
 import Modal from "@/components/Modal.vue";
+import CreatePersonModal from "./CreatePersonModal.vue";
 
 const props = defineProps({
   modelValue: Boolean,
@@ -225,15 +194,6 @@ const isEditing = computed(() => !!props.editData);
 const files = { foto: null, firma: null };
 const previews = ref({ foto: null, firma: null });
 const showPersonModal = ref(false);
-const isSavingPerson = ref(false);
-
-const personForm = ref({
-  cognome: "",
-  nome: "",
-  codice_fiscale: "",
-  data_nascita: "",
-  luogo_nascita: "",
-});
 
 const initialFormState = {
   id_persona: "",
@@ -261,23 +221,10 @@ const checkNewPerson = (event) => {
   }
 };
 
-const submitNewPerson = async () => {
-  try {
-    isSavingPerson.value = true;
-    const response = await apiClient.post("/persone", personForm.value);
-
-    emit("refresh-people");
-
-    form.value.id_persona = response.data.id;
-
-    showPersonModal.value = false;
-    Object.keys(personForm.value).forEach((key) => (personForm.value[key] = ""));
-    alert("Persona creata correttamente");
-  } catch (err) {
-    alert("Errore nella creazione della persona");
-  } finally {
-    isSavingPerson.value = false;
-  }
+const handlePersonCreated = async (newPersonId) => {
+  emit("refresh-people");
+  form.value.id_persona = newPersonId;
+  showPersonModal.value = false;
 };
 
 const submitRequest = async () => {
