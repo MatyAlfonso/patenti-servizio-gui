@@ -79,9 +79,11 @@
       </div>
     </Modal>
 
-    <div v-if="loading">Caricando enti...</div>
+    <Loading v-if="loading" text="Recupero anagrafica degli enti..." />
+
     <div v-else-if="error">{{ error }}</div>
-    <Table :items="filteredEntities" :fields="tableColumns" :striped="true">
+
+    <Table v-else :items="filteredEntities" :fields="tableColumns" :striped="true">
       <template #cell[actions]="{ data }">
         <div class="actions-wrapper">
           <button
@@ -117,6 +119,7 @@ import Table from "@/components/Table.vue";
 import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
+import Loading from "@/components/LoadingSpinner.vue";
 import SearchBar from "@/components/SearchBar.vue";
 
 const entities = ref([]);
@@ -139,7 +142,7 @@ const entityForm = ref({ ...initialEntityState });
 const tableColumns = [
   { key: "id", label: "Codice", sortable: true },
   { key: "descrizione", label: "Descrizione", sortable: true },
-  { key: "actions", label: "Azioni" }
+  { key: "actions", label: "Azioni" },
 ];
 
 const toast = ref({

@@ -28,7 +28,11 @@
       </div>
     </div>
 
-    <div class="tab-content">
+    <Loading v-if="loading" text="Recupero le patenti..." />
+
+    <div v-else-if="error">{{ error }}</div>
+
+    <div v-else class="tab-content">
       <Table
         :items="activeTab === 'servizio' ? filteredServizioRaw : filteredCivileRaw"
         :fields="activeTab === 'servizio' ? colsServizio : colsCivile"
@@ -123,6 +127,7 @@ import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import Filter from "@/components/Filter.vue";
+import Loading from "@/components/LoadingSpinner.vue";
 import { formatDate } from "@/utils/formatters";
 
 const activeTab = ref("servizio");
@@ -132,6 +137,8 @@ const toast = ref({ show: false, message: "", type: "success" });
 const searchQuery = ref("");
 const statusFilter = ref("ALL");
 const sortOrder = ref("DESC");
+const loading = ref(false);
+const error = ref(null);
 
 const statusModal = ref({
   show: false,
@@ -245,6 +252,8 @@ const filteredCivileRaw = computed(() => {
 
 const loadData = async () => {
   try {
+    loading.value = true;
+    error.value = null;
     const [resServ, resCiv] = await Promise.all([
       apiClient.get("/patenti-servizio"),
       apiClient.get("/patenti-civili"),
@@ -252,7 +261,9 @@ const loadData = async () => {
     patentiServizio.value = resServ;
     patentiCivile.value = resCiv;
   } catch (e) {
-    showToast("Errore nel caricamento", "error");
+    error.value = "Errore nel recupero dei dati.";
+  } finally {
+    loading.value = false;
   }
 };
 

@@ -70,7 +70,10 @@
       </div>
     </Modal>
 
-    <div v-if="loading">Caricando...</div>
+    <Loading v-if="loading" text="Recupero anagrafica del personale..." />
+
+    <div v-else-if="error">{{ error }}</div>
+
     <Table v-else :items="filteredPeople" :fields="tableColumns" :striped="true">
       <template #cell[actions]="{ data }">
         <div class="actions-wrapper">
@@ -109,6 +112,7 @@ import Modal from "@/components/Modal.vue";
 import Icon from "@/components/Icon.vue";
 import Toast from "@/components/Toast.vue";
 import SearchBar from "@/components/SearchBar.vue";
+import Loading from "@/components/LoadingSpinner.vue";
 import { formatDate } from "@/utils/formatters";
 
 const people = ref([]);
@@ -119,6 +123,7 @@ const isEditing = ref(false);
 const showDeleteModal = ref(false);
 const personToDelete = ref(null);
 const searchQuery = ref("");
+const error = ref(null);
 
 const initialPersonState = {
   cognome: "",
@@ -134,7 +139,12 @@ const tableColumns = [
   { key: "cognome", label: "Cognome", sortable: true },
   { key: "nome", label: "Nome", sortable: true },
   { key: "codice_fiscale", label: "Codice fiscale", sortable: true },
-  { key: "data_nascita", label: "Data di nascita", sortable: true, formatter: formatDate },
+  {
+    key: "data_nascita",
+    label: "Data di nascita",
+    sortable: true,
+    formatter: formatDate,
+  },
   { key: "luogo_nascita", label: "Luogo di nascita", sortable: true },
   { key: "actions", label: "Azioni" },
 ];

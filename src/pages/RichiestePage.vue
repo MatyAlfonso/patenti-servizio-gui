@@ -50,7 +50,7 @@
       </div>
     </Modal>
 
-    <div v-if="loading">Caricando...</div>
+    <Loading v-if="loading" text="Recupero le richieste..." />
 
     <div v-else-if="error">{{ error }}</div>
 
@@ -145,6 +145,7 @@ import SearchBar from "@/components/SearchBar.vue";
 import Filter from "@/components/Filter.vue";
 import RequestFormModal from "@/components/RequestFormModal.vue";
 import RequestDetailModal from "@/components/RequestDetailModal.vue";
+import Loading from "@/components/LoadingSpinner.vue";
 import { formatDate } from "@/utils/formatters";
 
 const showModal = ref(false);
