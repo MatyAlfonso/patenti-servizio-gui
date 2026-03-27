@@ -52,24 +52,16 @@
     </Modal>
 
     <Modal
-      v-if="showDeleteModal"
-      title="Conferma eliminazione"
-      @close="showDeleteModal = false"
+      v-if="confirmAction.show"
+      :title="confirmAction.title"
+      @close="confirmAction.show = false"
     >
       <div class="confirm-modal-content">
-        <p>
-          Sei sicuro/a di voler eliminare l'ente
-          <strong>{{ entityToDelete?.descrizione }}</strong
-          >?
-        </p>
-
+        <p v-html="confirmAction.message"></p>
         <div class="form-actions">
-          <button type="button" @click="showDeleteModal = false" class="btn-cancel">
-            Annulla
-          </button>
+          <button @click="confirmAction.show = false" class="btn-cancel">Annulla</button>
           <button
-            type="button"
-            @click="deleteEntity"
+            @click="confirmAction.callback"
             class="btn-delete-confirm"
             :disabled="isSaving"
           >
@@ -129,8 +121,7 @@ const showModal = ref(false);
 const error = ref(null);
 const searchQuery = ref("");
 const isEditing = ref(false);
-const showDeleteModal = ref(false);
-const entityToDelete = ref(null);
+const confirmAction = ref({ show: false, title: "", message: "", callback: null });
 
 const initialEntityState = {
   id: "",
@@ -174,12 +165,6 @@ const loadEntities = async () => {
   }
 };
 
-const showToast = (msg, type = "success") => {
-  toast.value = { show: true, message: msg, type };
-  setTimeout(() => {
-    toast.value.show = false;
-  }, 4000);
-};
 const openEditModal = (entity) => {
   isEditing.value = true;
   entityForm.value = { ...entity };
@@ -221,26 +206,34 @@ const saveEntity = async () => {
 };
 
 const confirmDelete = (entity) => {
-  entityToDelete.value = entity;
-  showDeleteModal.value = true;
+  confirmAction.value = {
+    show: true,
+    title: "Conferma eliminazione",
+    message: `Sei sicuro di voler eliminare l'ente <strong>${entity.descrizione}</strong>?`,
+    callback: () => executeDelete(entity.id),
+  };
 };
 
-const deleteEntity = async () => {
-  if (!entityToDelete.value) return;
-
+const executeDelete = async (id) => {
   try {
     isSaving.value = true;
-    await apiClient.delete(`/enti/${entityToDelete.value.id}`);
+    await apiClient.delete(`/enti/${id}`);
     showToast("Ente eliminato con successo!");
+    confirmAction.value.show = false;
     await loadEntities();
-    showDeleteModal.value = false;
   } catch (err) {
     const msg = err.response?.data?.error || "Errore durante l'eliminazione";
     showToast(msg, "error");
   } finally {
     isSaving.value = false;
-    entityToDelete.value = null;
   }
+};
+
+const showToast = (msg, type = "success") => {
+  toast.value = { show: true, message: msg, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 4000);
 };
 
 onMounted(loadEntities);

@@ -40,7 +40,7 @@
       @close="confirmAction.show = false"
     >
       <div class="confirm-modal-content">
-        <p>{{ confirmAction.message }}</p>
+        <p v-html="confirmAction.message"></p>
         <div class="form-actions">
           <button @click="confirmAction.show = false" class="btn-cancel">Annulla</button>
           <button @click="confirmAction.callback" class="btn-reject" :disabled="isSaving">
@@ -333,7 +333,7 @@ const confirmReject = (item) => {
   confirmAction.value = {
     show: true,
     title: "Conferma respinta",
-    message: `Vuoi respingere la richiesta di ${item.persona?.cognome} ${item.persona?.nome}?`,
+    message: `Vuoi respingere la richiesta di <strong>${item.persona?.cognome} ${item.persona?.nome}</strong>?`,
     callback: () => executeReject(item.id),
   };
 };
@@ -354,7 +354,7 @@ const confirmDelete = (item) => {
   confirmAction.value = {
     show: true,
     title: "Conferma eliminazione",
-    message: `Sei sicuro di voler eliminare la richiesta di ${item.persona?.cognome}?`,
+    message: `Sei sicuro di voler eliminare la richiesta di <strong>${item.persona?.cognome} ${item.persona?.nome}</strong>?`,
     callback: () => executeDelete(item.id),
   };
 };

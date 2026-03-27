@@ -50,21 +50,23 @@
     </Modal>
 
     <Modal
-      v-if="showDeleteModal"
-      title="Conferma eliminazione"
-      @close="showDeleteModal = false"
+      v-if="confirmAction.show"
+      :title="confirmAction.title"
+      @close="confirmAction.show = false"
     >
       <div class="confirm-modal-content">
-        <p>
-          Sei sicuro di voler eliminare
-          <strong>{{ personToDelete?.cognome }} {{ personToDelete?.nome }}</strong
-          >?
+        <p v-html="confirmAction.message"></p>
+        <p v-if="confirmAction.warning" class="warning-text">
+          {{ confirmAction.warning }}
         </p>
-        <p class="warning-text">L'azione è irreversibile.</p>
         <div class="form-actions">
-          <button @click="showDeleteModal = false" class="btn-cancel">Annulla</button>
-          <button @click="deletePerson" class="btn-delete-confirm" :disabled="isSaving">
-            Sì, elimina
+          <button @click="confirmAction.show = false" class="btn-cancel">Annulla</button>
+          <button
+            @click="confirmAction.callback"
+            class="btn-delete-confirm"
+            :disabled="isSaving"
+          >
+            {{ isSaving ? "Eliminando..." : "Conferma" }}
           </button>
         </div>
       </div>
@@ -120,10 +122,15 @@ const loading = ref(true);
 const isSaving = ref(false);
 const showModal = ref(false);
 const isEditing = ref(false);
-const showDeleteModal = ref(false);
-const personToDelete = ref(null);
 const searchQuery = ref("");
 const error = ref(null);
+const confirmAction = ref({
+  show: false,
+  title: "",
+  message: "",
+  warning: "",
+  callback: null,
+});
 
 const initialPersonState = {
   cognome: "",
@@ -174,11 +181,6 @@ const openEditModal = (item) => {
   showModal.value = true;
 };
 
-const confirmDelete = (person) => {
-  personToDelete.value = person;
-  showDeleteModal.value = true;
-};
-
 const savePerson = async () => {
   try {
     isSaving.value = true;
@@ -203,21 +205,6 @@ const savePerson = async () => {
   }
 };
 
-const deletePerson = async () => {
-  try {
-    isSaving.value = true;
-    await apiClient.delete(`/persone/${personToDelete.value.id}`);
-    showToast("Persona eliminata!");
-    await loadPeople();
-    showDeleteModal.value = false;
-  } catch (err) {
-    showToast("Errore nell'eliminazione", "error");
-  } finally {
-    isSaving.value = false;
-    personToDelete.value = null;
-  }
-};
-
 const loadPeople = async () => {
   try {
     loading.value = true;
@@ -226,6 +213,30 @@ const loadPeople = async () => {
     error.value = "Nessun personale trovato.";
   } finally {
     loading.value = false;
+  }
+};
+
+const confirmDelete = (person) => {
+  confirmAction.value = {
+    show: true,
+    title: "Conferma eliminazione",
+    message: `Sei sicuro di voler eliminare <strong>${person.cognome} ${person.nome}</strong>?`,
+    warning: "L'azione è irreversibile.",
+    callback: () => executeDelete(person.id),
+  };
+};
+
+const executeDelete = async (id) => {
+  try {
+    isSaving.value = true;
+    await apiClient.delete(`/persone/${id}`);
+    showToast("Persona eliminata!");
+    confirmAction.value.show = false;
+    await loadPeople();
+  } catch (err) {
+    showToast("Errore nell'eliminazione", "error");
+  } finally {
+    isSaving.value = false;
   }
 };
 
