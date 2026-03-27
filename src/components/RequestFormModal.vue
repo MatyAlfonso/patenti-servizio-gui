@@ -187,7 +187,7 @@ const props = defineProps({
   categories: Array,
 });
 
-const emit = defineEmits(["update:modelValue", "saved", "refresh-people"]);
+const emit = defineEmits(["update:modelValue", "saved", "refresh-people", "error"]);
 
 const isSaving = ref(false);
 const isEditing = computed(() => !!props.editData);
@@ -258,7 +258,8 @@ const submitRequest = async () => {
     emit("saved");
     emit("update:modelValue", false);
   } catch (err) {
-    alert("Errore: " + err.message);
+    const errorMessage = err.response?.data?.error || err.message || "Errore durante il salvataggio";
+    emit("error", errorMessage);
   } finally {
     isSaving.value = false;
   }

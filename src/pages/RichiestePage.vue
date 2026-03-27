@@ -25,6 +25,7 @@
       :categories="categories"
       @saved="handleSaved"
       @refresh-people="loadData"
+      @error="(msg) => showToast(msg, 'error')"
     />
 
     <RequestDetailModal
