@@ -258,7 +258,8 @@ const submitRequest = async () => {
     emit("saved");
     emit("update:modelValue", false);
   } catch (err) {
-    const errorMessage = err.response?.data?.error || err.message || "Errore durante il salvataggio";
+    const errorMessage =
+      err.response?.data?.error || err.message || "Errore durante il salvataggio";
     emit("error", errorMessage);
   } finally {
     isSaving.value = false;
@@ -273,6 +274,22 @@ const handleFile = (e, type) => {
   }
 };
 
+const resetForm = () => {
+  form.value = { ...initialFormState };
+  previews.value = { foto: null, firma: null };
+  files.foto = null;
+  files.firma = null;
+};
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen && !props.editData) {
+      resetForm();
+    }
+  }
+);
+
 watch(
   () => props.editData,
   (r) => {
@@ -284,25 +301,27 @@ watch(
         id_ente: r.id_ente,
         id_tipo: r.id_tipo,
         residenza_persona: r.residenza_persona,
-        patente_civile_numero: r.persona?.patente_civile[0]?.numero || "",
-        patente_civile_categorie: r.persona?.patente_civile[0]?.id_categoria || "",
-        patente_civile_autorita: r.persona?.patente_civile[0]?.autorita || "",
-        patente_civile_rilascio: r.persona?.patente_civile[0]?.data_rilascio || "",
-        patente_civile_scadenza: r.persona?.patente_civile[0]?.data_scadenza || "",
+        patente_civile_numero:
+          r.persona?.patente_civile?.find((p) => p.id_stato === "ATTIVA")?.numero || "",
+        patente_civile_categorie:
+          r.persona?.patente_civile?.find((p) => p.id_stato === "ATTIVA")?.id_categoria ||
+          "",
+        patente_civile_autorita:
+          r.persona?.patente_civile?.find((p) => p.id_stato === "ATTIVA")?.autorita || "",
+        patente_civile_rilascio:
+          r.persona?.patente_civile?.find((p) => p.id_stato === "ATTIVA")
+            ?.data_rilascio || "",
+        patente_civile_scadenza:
+          r.persona?.patente_civile?.find((p) => p.id_stato === "ATTIVA")
+            ?.data_scadenza || "",
       };
 
       previews.value.foto = r.fototessera?.path ? `api/${r.fototessera.path}` : null;
       previews.value.firma = r.firma_scansionata?.path
         ? `api/${r.firma_scansionata.path}`
         : null;
-
-      files.foto = null;
-      files.firma = null;
     } else {
-      form.value = { ...initialFormState };
-      previews.value = { foto: null, firma: null };
-      files.foto = null;
-      files.firma = null;
+      resetForm();
     }
   },
   { immediate: true }
