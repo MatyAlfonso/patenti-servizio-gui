@@ -159,7 +159,11 @@
             <button
               class="btn-icon print"
               @click="openStatusModal(data.item, activeTab)"
-              title="Cambia stato"
+              :disabled="data.item.id_stato !== 'ATTIVA'"
+              :title="
+                data.item.id_stato !== 'ATTIVA' ? 'Non modificabile' : 'Cambia stato'
+              "
+              :class="data.item.id_stato !== 'ATTIVA' ? 'not-allowed' : ''"
             >
               <Icon name="settings" size="24" />
             </button>
@@ -647,5 +651,10 @@ onMounted(loadData);
   display: flex;
   justify-content: flex-end;
   width: 100%;
+}
+
+.not-allowed {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 </style>
