@@ -127,7 +127,12 @@
       />
 
       <fieldset>
-        <legend>DATI PATENTE CIVILE POSSEDUTA</legend>
+        <legend>
+          DATI PATENTE CIVILE POSSEDUTA
+          <span v-if="isLicenseReadonly" class="autocomplete">
+            (Recuperata automaticamente)
+          </span>
+        </legend>
         <div>
           <div class="form-group-row">
             <label>Numero della patente</label>
@@ -194,6 +199,7 @@ const isEditing = computed(() => !!props.editData);
 const files = { foto: null, firma: null };
 const previews = ref({ foto: null, firma: null });
 const showPersonModal = ref(false);
+const isLicenseReadonly = ref(false);
 
 const initialFormState = {
   id_persona: "",
@@ -229,6 +235,15 @@ const checkNewPerson = (event) => {
     showPersonModal.value = true;
     form.value.id_persona = "";
   }
+};
+
+const resetLicenseFields = () => {
+  form.value.patente_civile_numero = "";
+  form.value.patente_civile_categorie = "";
+  form.value.patente_civile_autorita = "";
+  form.value.patente_civile_rilascio = "";
+  form.value.patente_civile_scadenza = "";
+  isLicenseReadonly.value = false;
 };
 
 const handlePersonCreated = async (newPersonId) => {
@@ -326,6 +341,33 @@ watch(
   },
   { immediate: true }
 );
+
+watch(selectedPerson, (newPerson) => {
+  if (isEditing.value && props.editData?.id_persona === newPerson?.id) return;
+
+  if (newPerson) {
+    const activeLicense = newPerson.patente_civile?.find((p) => p.id_stato === "ATTIVA");
+
+    if (activeLicense) {
+      form.value.patente_civile_numero = activeLicense.numero;
+      form.value.patente_civile_categorie = activeLicense.id_categoria;
+      form.value.patente_civile_autorita = activeLicense.autorita;
+
+      form.value.patente_civile_rilascio = activeLicense.data_rilascio
+        ? activeLicense.data_rilascio.substring(0, 10)
+        : "";
+      form.value.patente_civile_scadenza = activeLicense.data_scadenza
+        ? activeLicense.data_scadenza.substring(0, 10)
+        : "";
+
+      isLicenseReadonly.value = true;
+    } else {
+      resetLicenseFields();
+    }
+  } else {
+    resetLicenseFields();
+  }
+});
 </script>
 
 <style scoped>
@@ -454,5 +496,11 @@ watch(
   &:disabled {
     background: #ccc;
   }
+}
+
+.autocomplete {
+  font-size: 0.7rem;
+  color: #28a745;
+  margin-left: 10px;
 }
 </style>
