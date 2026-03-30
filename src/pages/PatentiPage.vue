@@ -4,7 +4,7 @@
       <h2>Gestione patenti</h2>
 
       <div class="toolbar">
-        <SearchBar v-model="searchQuery" placeholder="Cerca per nome o cognome..." />
+        <SearchBar v-model="searchQuery" placeholder="Cerca..." />
         <Filter
           v-model:statusFilter="statusFilter"
           v-model:sortOrder="sortOrder"
@@ -12,19 +12,111 @@
         />
       </div>
 
-      <div class="tabs">
-        <button
-          :class="['tab-btn', { active: activeTab === 'servizio' }]"
-          @click="activeTab = 'servizio'"
-        >
-          Patenti di servizio
-        </button>
-        <button
-          :class="['tab-btn', { active: activeTab === 'civile' }]"
-          @click="activeTab = 'civile'"
-        >
-          Patenti civili
-        </button>
+      <Modal
+        v-if="showCreateModal"
+        title="Nuova patente civile"
+        @close="showCreateModal = false"
+      >
+        <form @submit.prevent="saveCivilLicense" class="grid-form">
+          <div class="form-group">
+            <label>Titolare</label>
+            <select v-model="civilForm.id_persona" @change="checkNewPerson" required>
+              <option value="" disabled>Seleziona una persona...</option>
+
+              <option value="NEW_PERSON" class="option-add">
+                + Aggiungi nuova persona...
+              </option>
+
+              <option v-for="p in sortedPersone" :key="p.id" :value="p.id">
+                {{ p.cognome }} {{ p.nome }} - {{ p.codice_fiscale }}
+              </option>
+            </select>
+          </div>
+
+          <CreatePersonModal
+            v-model="showPersonModal"
+            @person-created="handlePersonCreated"
+          />
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px">
+            <div class="form-group">
+              <label>Numero patente</label>
+              <input
+                v-model="civilForm.numero"
+                type="text"
+                placeholder="Es: U1B234567X"
+                required
+                @input="civilForm.numero = civilForm.numero.toUpperCase()"
+              />
+            </div>
+            <div class="form-group">
+              <label>Categoria</label>
+              <select v-model="civilForm.id_categoria" required>
+                <option v-for="cat in categorie" :key="cat.id" :value="cat.id">
+                  {{ cat.descrizione }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px">
+            <div class="form-group">
+              <label>Data rilascio</label>
+              <input v-model="civilForm.data_rilascio" type="date" required />
+            </div>
+            <div class="form-group">
+              <label>Data scadenza</label>
+              <input v-model="civilForm.data_scadenza" type="date" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Autorità di rilascio</label>
+            <input
+              v-model="civilForm.autorita"
+              type="text"
+              placeholder="Es: MCTC ROMA"
+              required
+              @input="civilForm.autorita = civilForm.autorita.toUpperCase()"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button type="button" @click="showCreateModal = false" class="btn-cancel">
+              Annulla
+            </button>
+            <button type="submit" class="btn-save" :disabled="isSaving">
+              {{ isSaving ? "Salvataggio..." : "Salva" }}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <div class="tabs-container">
+        <div class="tabs">
+          <button
+            :class="['tab-btn', { active: activeTab === 'servizio' }]"
+            @click="activeTab = 'servizio'"
+          >
+            Patenti di servizio
+          </button>
+          <button
+            :class="['tab-btn', { active: activeTab === 'civile' }]"
+            @click="activeTab = 'civile'"
+          >
+            Patenti civili
+          </button>
+        </div>
+
+        <div class="tab-actions">
+          <button
+            v-if="activeTab === 'civile'"
+            class="btn-new"
+            @click="openCreateCivilModal"
+          >
+            <Icon name="add" size="18" /> Nuova patente civile
+          </button>
+        </div>
       </div>
     </div>
 
@@ -128,6 +220,7 @@ import Toast from "@/components/Toast.vue";
 import SearchBar from "@/components/SearchBar.vue";
 import Filter from "@/components/Filter.vue";
 import Loading from "@/components/LoadingSpinner.vue";
+import CreatePersonModal from "@/components/CreatePersonModal.vue";
 import { formatDate } from "@/utils/formatters";
 
 const activeTab = ref("servizio");
@@ -139,6 +232,11 @@ const statusFilter = ref("ALL");
 const sortOrder = ref("DESC");
 const loading = ref(false);
 const error = ref(null);
+const showCreateModal = ref(false);
+const isSaving = ref(false);
+const persone = ref([]);
+const categorie = ref([]);
+const showPersonModal = ref(false);
 
 const statusModal = ref({
   show: false,
@@ -220,6 +318,17 @@ const statusOptions = computed(() => {
   }
 });
 
+const initialCivilState = {
+  id_persona: "",
+  numero: "",
+  id_categoria: "",
+  data_rilascio: "",
+  data_scadenza: "",
+  autorita: "",
+};
+
+const civilForm = ref({ ...initialCivilState });
+
 const filteredServizioRaw = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
   let result = [...patentiServizio.value];
@@ -267,6 +376,32 @@ const loadData = async () => {
   }
 };
 
+const checkNewPerson = (event) => {
+  if (event.target.value === "NEW_PERSON") {
+    showPersonModal.value = true;
+    civilForm.value.id_persona = "";
+  }
+};
+
+const handlePersonCreated = async (newPersonId) => {
+  try {
+    const res = await apiClient.get("/persone");
+    persone.value = res;
+    civilForm.value.id_persona = newPersonId;
+    showPersonModal.value = false;
+  } catch (err) {
+    showToast("Errore nel caricamento delle persone", "error");
+  }
+};
+
+const sortedPersone = computed(() => {
+  return [...persone.value].sort((a, b) => {
+    const nameA = `${a.cognome} ${a.nome}`.toLowerCase();
+    const nameB = `${b.cognome} ${b.nome}`.toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+});
+
 const openStatusModal = (patente, tipo) => {
   statusModal.value = {
     show: true,
@@ -296,6 +431,41 @@ const confirmStatusChange = async () => {
   }
 };
 
+const openCreateCivilModal = async () => {
+  try {
+    loading.value = true;
+    const [resPersone, resCat] = await Promise.all([
+      apiClient.get("/persone"),
+      apiClient.get("/categorie-patenti"),
+    ]);
+    persone.value = resPersone;
+    categorie.value = resCat;
+
+    civilForm.value = { ...initialCivilState };
+    showCreateModal.value = true;
+  } catch (err) {
+    showToast("Errore nel caricamento dei dati.", "error");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const saveCivilLicense = async () => {
+  try {
+    isSaving.value = true;
+    await apiClient.post("/patenti-civili", civilForm.value);
+
+    showToast("Patente civile registrata con successo!");
+    showCreateModal.value = false;
+    await loadData();
+  } catch (err) {
+    const msg = err.response?.data?.error || "Errore durante il salvataggio";
+    showToast(msg, "error");
+  } finally {
+    isSaving.value = false;
+  }
+};
+
 const showToast = (msg, type = "success") => {
   toast.value = { show: true, message: msg, type };
   setTimeout(() => (toast.value.show = false), 3000);
@@ -322,7 +492,8 @@ onMounted(loadData);
 .tabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+  width: 100%;
 }
 .tab-btn {
   padding: 10px 20px;
@@ -439,5 +610,42 @@ onMounted(loadData);
   justify-content: flex-end;
   gap: 10px;
   margin-top: 10px;
+}
+
+.btn-new {
+  background-color: #ff5900;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #e65000;
+  }
+}
+
+.option-add {
+  background-color: #f0f7ff;
+  color: #0067b1;
+  font-weight: bold;
+}
+
+.tabs-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.tab-actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 </style>
