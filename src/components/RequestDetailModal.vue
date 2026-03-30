@@ -213,6 +213,7 @@ defineEmits(["update:modelValue", "approve", "reject"]);
   color: #155724;
 }
 .badge.REVOCATA,
+.badge.RESPINTA,
 .badge.SCADUTA,
 .badge.SOSPESA,
 .badge.ANNULLATA,
