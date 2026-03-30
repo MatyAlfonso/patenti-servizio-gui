@@ -196,4 +196,29 @@ defineEmits(["update:modelValue", "approve", "reject"]);
     background-color: #c82333;
   }
 }
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.badge.IN_PREPARAZIONE {
+  background: #fff3cd;
+  color: #856404;
+}
+.badge.ATTIVA {
+  background: #d4edda;
+  color: #155724;
+}
+.badge.REVOCATA,
+.badge.SCADUTA,
+.badge.SOSPESA,
+.badge.ANNULLATA,
+.badge.RUBATA,
+.badge.SMARRITA {
+  background: #f8d7da;
+  color: #721c24;
+}
 </style>
